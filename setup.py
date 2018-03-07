@@ -4,6 +4,10 @@ import Pyiiko
 
 setup(
     name='Pyiiko',
+    description='Libary for iikoAPI',
+    url='https://github.com/gadzhi/pyiiko',
+    author='Gadzhibala Pirmagomedov',
+    author_email='gadzhibala@protonmail.com',
     version=Pyiiko.__version__,
     packages=find_packages(),
     long_description=open(join(dirname(__file__), 'README.rst')).read(),
