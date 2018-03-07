@@ -1,4 +1,4 @@
 Description
 ===========
 
-Библеотека для работы с iikoAPI Server
+Библиотека для работы с iikoAPI Server
