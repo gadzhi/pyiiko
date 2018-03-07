@@ -14,4 +14,3 @@ def read_token():
 
     return token[0]
 
-print(type(read_token()))

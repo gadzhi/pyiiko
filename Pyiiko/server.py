@@ -45,21 +45,41 @@ class Iiko:
 
         token = Iiko.get_token(self)
 
-        departments = requests.get('http://' + self.ip + ':' + self.port +
-                           "/resto/api/corporation/departments?key=" + token)
+        try:
+            departments = requests.get('http://' + self.ip + ':' + self.port +
+                               "/resto/api/corporation/departments?key=" + token)
 
-        file = lxml.etree.fromstring(departments.content)
+            file = lxml.etree.fromstring(departments.content)
 
-        events = file.xpath(
-            r'//corporateItemDto/type[text() = "DEPARTMENT"]/..')
-        departments = {}
+            events = file.xpath(
+                r'//corporateItemDto/type[text() = "DEPARTMENT"]/..')
+            departments = {}
 
-        for event in events:
-            result = ''.join(event.xpath(r'./id/text()'))
+            for event in events:
+                result = ''.join(event.xpath(r'./id/text()'))
 
-            name = ''.join(event.xpath(r'./name/text()'))
+                name = ''.join(event.xpath(r'./name/text()'))
 
-            departments[name] = result
+                departments[name] = result
 
-        return departments
+            return departments
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+
+
+
+    def get_employees(self):
+
+        try:
+            token = Iiko.get_token(self)
+
+            employees = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/employees?key=' +
+                                     token, timeout=5).content
+
+            return employees
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + self.name + "\n" + self.ip + ":" + self.port)
+
 
