@@ -67,8 +67,6 @@ class Iiko:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
-
-
     def get_employees(self):
 
         try:
@@ -82,4 +80,16 @@ class Iiko:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + self.name + "\n" + self.ip + ":" + self.port)
 
+    def get_events(self):
+
+        token = Iiko.get_token(self)
+        try:
+
+            events = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/events?key=' + token +
+                                  "&from_rev=", timeout=5).content
+
+            return events
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
