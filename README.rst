@@ -14,12 +14,12 @@ Server API and iikoBiz. iiko company development of innovative systems for HoReC
 
 
 Пример:
-```python
+.. code:: python
 
-#Получение токена
+    #Получение токена
 
-i = Iiko('ваш ip', 'порт', 'имя пользователя', 'пароль')
+    i = Iiko('ваш ip', 'порт', 'имя пользователя', 'пароль')
 
-i.get_token()
+    i.get_token()
 
-```
+
