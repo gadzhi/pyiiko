@@ -5,7 +5,7 @@ from lxml import etree
 from Pyiiko.data import read_token, save_token
 
 
-class Iiko:
+class IikoServer:
 
     def __init__(self, ip, port, login, password):
 
@@ -43,7 +43,7 @@ class Iiko:
 
     def get_departments(self):
 
-        token = Iiko.get_token(self)
+        token = IikoServer.get_token(self)
 
         try:
             departments = requests.get('http://' + self.ip + ':' + self.port +
@@ -70,7 +70,7 @@ class Iiko:
     def get_employees(self):
 
         try:
-            token = Iiko.get_token(self)
+            token = IikoServer.get_token(self)
 
             employees = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/employees?key=' +
                                      token, timeout=5).content
@@ -78,11 +78,11 @@ class Iiko:
             return employees
 
         except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + self.name + "\n" + self.ip + ":" + self.port)
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
     def get_events(self):
 
-        token = Iiko.get_token(self)
+        token = IikoServer.get_token(self)
         try:
 
             events = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/events?key=' + token +
@@ -93,3 +93,16 @@ class Iiko:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
+
+class IikoBiz:
+
+    def __init__(self, login, password):
+
+        self.login = login
+        self.password = password
+
+    def get_token(self,):
+        token = requests.get('https://iiko.biz:9900/api/0/auth/access_token?user_id=' + self.login +
+                             '&user_secret=' + self.password, timeout=5).text[1:1]
+
+        return token
