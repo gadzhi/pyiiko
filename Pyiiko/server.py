@@ -2,7 +2,6 @@ import requests
 import hashlib
 import lxml
 from lxml import etree
-from Pyiiko.data import read_token, save_token
 
 
 class IikoServer:
@@ -17,37 +16,23 @@ class IikoServer:
     def get_token(self):
 
         try:
-            old_token = read_token()
 
-            check = requests.get('http://' + self.ip + ':' + self.port +
-                                       "/resto/api/corporation/departments?key=" + old_token)
-
-            if (check.status_code == 400) or (check.status_code == 401) or (
-                    check.status_code == 403) or (check.status_code == 402):
-
-                new_token = requests.get('http://' + self.ip + ':' + self.port + "/resto/api/auth?login=" +
+            new_token = requests.get('http://' + self.ip + ':' + self.port + "/resto/api/auth?login=" +
                                      self.login + "&" + "pass=" + self.password).text
 
-                save_token(new_token)
+            print("\nПолучен новый токен: " + new_token)
 
-                print("\nПолучен новый токен: " + new_token)
-
-                return new_token
-
-            else:
-                print("\nСтарый токен валидный: " + old_token)
-                return old_token
+            return new_token
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
-    def get_departments(self):
-
-        token = IikoServer.get_token(self)
+    def get_departments(self, token):
 
         try:
-            departments = requests.get('http://' + self.ip + ':' + self.port +
-                               "/resto/api/corporation/departments?key=" + token)
+
+            departments = requests.get('http://' + self.ip + ':' + self.port
+                                       +"/resto/api/corporation/departments?key=" + token)
 
             file = lxml.etree.fromstring(departments.content)
 
@@ -67,10 +52,9 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
-    def get_employees(self):
+    def get_employees(self, token):
 
         try:
-            token = IikoServer.get_token(self)
 
             employees = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/employees?key=' +
                                      token, timeout=5).content
@@ -80,9 +64,8 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
-    def get_events(self):
+    def get_events(self, token):
 
-        token = IikoServer.get_token(self)
         try:
 
             events = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/events?key=' + token +

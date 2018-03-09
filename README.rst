@@ -14,9 +14,8 @@ Server API and iikoBiz. iiko company development of innovative systems for HoReC
 
 
 Пример:
-.. code:: python
 
-    #Получение токена
+.. code:: python
 
     i = Iiko('ваш ip', 'порт', 'имя пользователя', 'пароль')
 
