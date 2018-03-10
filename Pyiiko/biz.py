@@ -48,6 +48,7 @@ class IikoBiz:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить заказы " + "\n" + self.login)
 
+    """Все заказы"""
     def get_all_orders(self, token, org, data_from, data_to, status, terminal_id):
 
         try:
@@ -59,3 +60,18 @@ class IikoBiz:
 
         except requests.exceptions.ConnectTimeout:
             print("Не получить заказы " + "\n" + self.login)
+
+    """История заказа гостя"""
+
+    def customer_history(self, token, org, customer):
+
+        try:
+            history = requests.get('https://iiko.biz:9900/api/0/orders/deliveryHistoryByCustomerId?access_token=' +
+            token + '&organization=' + org + '&customerId=' + customer + '&request_timeout=00%3A02%3A00').json()
+
+            return history
+        except requests.exceptions.ConnectTimeout:
+            print("Не получить заказы " + "\n" + self.login)
+
+
+
