@@ -13,7 +13,7 @@ class IikoServer:
         self.login = login
         self.password = hashlib.sha1(password.encode('utf-8')).hexdigest()
 
-    def get_token(self):
+    def token(self):
 
         try:
 
@@ -27,7 +27,7 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
-    def get_departments(self, token):
+    def departments(self, token):
 
         try:
 
@@ -52,7 +52,7 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
-    def get_employees(self, token):
+    def employees(self, token):
 
         try:
 
@@ -64,7 +64,7 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
-    def get_events(self, token):
+    def events(self, token):
 
         try:
 
@@ -76,6 +76,27 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
+    def stores(self,token):
 
+        try:
 
+            stores = requests.get('http://' + self.ip + ':' + self.port + 'resto/api/corporation/stores?key=' + token +
+                                  "&from_rev=", timeout=2).content
+
+            return stores
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+
+    def groups(self, token):
+
+        try:
+
+            groups = requests.get('http://' + self.ip + ':' + self.port + 'resto/api/corporation/groups?key=' + token +
+                                  "&from_rev=", timeout=2).content
+
+            return groups
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 

@@ -8,7 +8,7 @@ class IikoBiz:
         self.login = login
         self.password = password
 
-    def get_token(self):
+    def token(self):
         try:
 
             token = requests.get('https://iiko.biz:9900/api/0/auth/access_token?user_id=' + self.login +
@@ -18,7 +18,7 @@ class IikoBiz:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить токен " + "\n" + self.login)
 
-    def get_organization(self, token):
+    def organization(self, token):
 
         try:
 
@@ -28,7 +28,7 @@ class IikoBiz:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить список организаций " + "\n" + self.login)
 
-    def get_courier(self, token, org):
+    def courier(self, token, org):
 
         try:
             courier = requests.get('https://iiko.biz:9900/api/0/rmsSettings/getCouriers?access_token=' + token +
@@ -38,7 +38,7 @@ class IikoBiz:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить курьеров " + "\n" + self.login)
 
-    def get_orders_courier(self, token, org, courier):
+    def orders_courier(self, token, org, courier):
 
         try:
             orders = requests.get('https://iiko.biz:9900/api/0/orders/get_courier_orders?access_token=' + token +
@@ -49,7 +49,7 @@ class IikoBiz:
             print("Не удалось получить заказы " + "\n" + self.login)
 
     """Все заказы"""
-    def get_all_orders(self, token, org, data_from, data_to, status, terminal_id):
+    def all_orders(self, token, org, data_from, data_to, status, terminal_id):
 
         try:
             orders = requests.get('https://iiko.biz:9900/api/0/orders/deliveryOrders?access_token=' + token +
