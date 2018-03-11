@@ -19,10 +19,22 @@ class IikoServer:
 
             new_token = requests.get('http://' + self.ip + ':' + self.port + "/resto/api/auth?login=" +
                                      self.login + "&" + "pass=" + self.password).text
-
             print("\nПолучен новый токен: " + new_token)
 
             return new_token
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+
+    def quit(self, token):
+
+        try:
+
+            logout = requests.get('http://' + self.ip + ':' + self.port + "/resto/api/logout?key=" +
+                                     token).text
+            print("\nВыход осуществелен: ")
+
+            return logout
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
@@ -33,18 +45,14 @@ class IikoServer:
 
             departments = requests.get('http://' + self.ip + ':' + self.port
                                        +"/resto/api/corporation/departments?key=" + token)
-
             file = lxml.etree.fromstring(departments.content)
-
             events = file.xpath(
                 r'//corporateItemDto/type[text() = "DEPARTMENT"]/..')
             departments = {}
 
             for event in events:
                 result = ''.join(event.xpath(r'./id/text()'))
-
                 name = ''.join(event.xpath(r'./name/text()'))
-
                 departments[name] = result
 
             return departments
@@ -76,11 +84,11 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
-    def stores(self,token):
+    def stores(self, token):
 
         try:
 
-            stores = requests.get('http://' + self.ip + ':' + self.port + 'resto/api/corporation/stores?key=' + token +
+            stores = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/corporation/stores?key=' + token +
                                   "&from_rev=", timeout=2).content
 
             return stores
@@ -92,7 +100,7 @@ class IikoServer:
 
         try:
 
-            groups = requests.get('http://' + self.ip + ':' + self.port + 'resto/api/corporation/groups?key=' + token +
+            groups = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/corporation/groups?key=' + token +
                                   "&from_rev=", timeout=2).content
 
             return groups
