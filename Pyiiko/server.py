@@ -1,7 +1,5 @@
 import requests
 import hashlib
-import lxml
-from lxml import etree
 
 
 class IikoServer:
@@ -44,8 +42,7 @@ class IikoServer:
         try:
 
             departments = requests.get('http://' + self.ip + ':' + self.port
-                                       +"/resto/api/corporation/departments?key=" + token).content
-
+                                       + "/resto/api/corporation/departments?key=" + token).content
 
             return departments
 
@@ -100,7 +97,9 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
+    '''Olap отчеты'''
     def olap(self, token):
+
         try:
 
             olap = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/v2/reports/olap/columns?key='
@@ -111,4 +110,15 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
+    '''Номенклатура'''
+    def product(self, token):
 
+        try:
+
+            olap = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/products?key='
+                                + token, timeout=2).content
+
+            return olap
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
