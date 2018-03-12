@@ -1,6 +1,7 @@
 import lxml
-
 '''ф-я обработки департаментов'''
+
+
 def dep_edit(xml):
     file = lxml.etree.fromstring(xml)
     events = file.xpath(
@@ -13,3 +14,11 @@ def dep_edit(xml):
         departments[name] = result
 
     return departments
+
+def emp_edit(id_user, xml):
+
+    file = lxml.etree.fromstring(xml)
+    user = file.xpath(r'.//id[text() = "{id}"]'r'/../name/text()'.format(id=id_user)
+
+    return user
+
