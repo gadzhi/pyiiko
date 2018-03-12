@@ -44,16 +44,8 @@ class IikoServer:
         try:
 
             departments = requests.get('http://' + self.ip + ':' + self.port
-                                       +"/resto/api/corporation/departments?key=" + token)
-            file = lxml.etree.fromstring(departments.content)
-            events = file.xpath(
-                r'//corporateItemDto/type[text() = "DEPARTMENT"]/..')
-            departments = {}
+                                       +"/resto/api/corporation/departments?key=" + token).content
 
-            for event in events:
-                result = ''.join(event.xpath(r'./id/text()'))
-                name = ''.join(event.xpath(r'./name/text()'))
-                departments[name] = result
 
             return departments
 
