@@ -6,5 +6,5 @@ i = IikoServer('operaderbent.iiko.it', '8080', 'admin', 'resto#test')
 a = i.departments(i.token())
 
 
-print(dep_edit(a))
+print(i.products(i.token()))
 

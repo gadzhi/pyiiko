@@ -49,6 +49,30 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
+    def groups(self, token):
+
+        try:
+
+            groups = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/corporation/groups?key=' + token +
+                                  "&from_rev=", timeout=2).content
+
+            return groups
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+
+    def terminals(self, token):
+
+        try:
+
+            terminal = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/corporation/terminals?key=' + token +
+                                  "&from_rev=", timeout=2).content
+
+            return terminal
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+
     def employees(self, token):
 
         try:
@@ -85,17 +109,6 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
-    def groups(self, token):
-
-        try:
-
-            groups = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/corporation/groups?key=' + token +
-                                  "&from_rev=", timeout=2).content
-
-            return groups
-
-        except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
     '''Olap отчеты'''
     def olap(self, token):
@@ -111,14 +124,13 @@ class IikoServer:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
     '''Номенклатура'''
-    def product(self, token):
+    def products(self, token):
 
         try:
 
-            olap = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/products?key='
-                                + token, timeout=2).content
+            products = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/products?key=' + token, timeout=2).content
 
-            return olap
+            return products
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
