@@ -128,9 +128,23 @@ class IikoServer:
 
         try:
 
-            products = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/products?key=' + token, timeout=2).content
+            products = requests.get('http://' + self.ip + ':' + self.port +
+                                    '/resto/api/products?key=' + token, timeout=2).content
 
             return products
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+
+    '''Отчет по выручке'''
+    def sales(self,token, departments, date_from, date_to, dish_detail, all_revenue):
+
+        try:
+            sales = products = requests.get('http://' + self.ip + ':' + self.port +
+                                            'resto/api/reports/sales?key=' + token + '&department=' + departments +
+                                            '&dateFrom=' + date_from + '&dateTo=' + date_to + '&dishDetails=' +
+                                            dish_detail + '&allRevenue=' + all_revenue,  timeout=2).content
+            return sales
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
