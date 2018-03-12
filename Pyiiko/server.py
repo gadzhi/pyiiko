@@ -108,3 +108,15 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
 
+    def olap(self, token):
+        try:
+
+            olap = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/v2/reports/olap/columns?key='
+                                  + token + "&reportType=SALES", timeout=2).content
+
+            return olap
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+
+
