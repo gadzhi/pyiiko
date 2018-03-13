@@ -8,6 +8,7 @@ __pycache__/
 
 # C extensionsls
 *.so
+*.json
 
 # Distribution / packaging
 .Python
