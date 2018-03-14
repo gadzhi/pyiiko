@@ -16,7 +16,7 @@ Server API and iikoBiz. iiko company development of innovative systems for HoReC
 Пример:
 
 ```python
-    from Pyiiko.server import IikoServer
+    from Pyiiko import IikoServer
 
     i = IikoServer('ваш ip', 'порт', 'имя пользователя', 'пароль')
 
