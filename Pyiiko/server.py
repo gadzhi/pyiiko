@@ -148,3 +148,5 @@ class IikoServer:
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+
+i = IikoServer
