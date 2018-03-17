@@ -11,12 +11,10 @@ Welcome to pyiiko's documentation!
    :caption: Contents:
 
 **Just Example**::
-.. code-block::
-    from Pyiiko.server import IikoServer
 
-    i = IikoServer('ваш ip', 'порт', 'Логин', 'пароль')
-
-    token = i.token()
+      >>> from Pyiiko.server import IikoServer
+      >>> i = IikoServer('ваш ip', 'порт', 'Логин', 'пароль')
+      >>> token = i.token()
 
 
 Indices and tables

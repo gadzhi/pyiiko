@@ -6,6 +6,7 @@ import os
 #with open('1.json', encoding='utf-8') as json_data:
 #    d = json.load(json_data)
 
+
 def dep_edit(xml):
     file = lxml.etree.fromstring(xml)
     events = file.xpath(
@@ -20,7 +21,13 @@ def dep_edit(xml):
     return departments
 
 
-def emp_edit(id_user, xml):
+def events(xml, event):
+    '''
+    file = lxml.etree.fromstring(xml)
+    events = file.xpath(
+        r'//corporateItemDto/type[text() = "{event}"]/..'.format(event=event))
+    '''
+def find_user(id_user, xml):
 
     file = lxml.etree.fromstring(xml)
     user = file.xpath(r'.//id[text() = "{id}"]'r'/../name/text()'.format(id=id_user))

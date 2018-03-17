@@ -140,7 +140,7 @@ class IikoServer:
     def sales(self,token, departments, date_from, date_to, dish_detail, all_revenue):
 
         try:
-            sales = products = requests.get('http://' + self.ip + ':' + self.port +
+            sales = requests.get('http://' + self.ip + ':' + self.port +
                                             'resto/api/reports/sales?key=' + token + '&department=' + departments +
                                             '&dateFrom=' + date_from + '&dateTo=' + date_to + '&dishDetails=' +
                                             dish_detail + '&allRevenue=' + all_revenue,  timeout=2).content
