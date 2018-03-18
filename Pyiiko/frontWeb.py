@@ -2,7 +2,7 @@ import requests
 
 
 class FrontWebAPI():
-    def __init__(self, login, url,moduleid):
+    def __init__(self, login, url, moduleid):
 
         self.login = login
         self.url = url
@@ -16,7 +16,9 @@ class FrontWebAPI():
 
     def order_all(self, token):
 
-        req = requests.get('http://' + self.url + "/api/orders?key=" + token).content
+        req = requests.get('http://' + self.url + "/api/orders?key=" + token,
+                           headers={"content-type": "application/json"}).content
 
         return req
+
 
