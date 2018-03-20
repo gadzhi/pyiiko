@@ -1,12 +1,13 @@
 import requests
 
 
-class FrontWebAPI():
-    def __init__(self, login, url, moduleid):
+class FrontWebAPI:
 
-        self.login = login
+    def __init__(self, url, moduleid, content_type):
+
         self.url = url
         self.moduleid = moduleid
+        self.content_type = content_type
 
     def token(self):
 
@@ -17,7 +18,7 @@ class FrontWebAPI():
     def order_all(self, token):
 
         req = requests.get('http://' + self.url + "/api/orders?key=" + token,
-                           headers={"content-type": "application/json"}).content
+                           headers=self.content_type).content
 
         return req
 
