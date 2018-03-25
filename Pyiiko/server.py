@@ -12,7 +12,6 @@ class IikoServer:
         self.password = hashlib.sha1(password.encode('utf-8')).hexdigest()
 
     def token(self):
-
         """Получение токена"""
         try:
             new_token = requests.get('http://' + self.ip + ':' + self.port + "/resto/api/auth?login=" +
@@ -21,19 +20,20 @@ class IikoServer:
             return new_token
 
         except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+            print("Не удалось подключиться к серверу " +
+                  "\n" + self.ip + ":" + self.port)
 
     def quit(self, token):
-
         """Уничтожение токена"""
         try:
             logout = requests.get('http://' + self.ip + ':' + self.port + "/resto/api/logout?key=" +
-                                     token).text
+                                  token).text
             print("\nВыход осуществелен: ")
             return logout
 
         except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+            print("Не удалось подключиться к серверу " +
+                  "\n" + self.ip + ":" + self.port)
 
     def departments(self, token):
 
@@ -43,7 +43,8 @@ class IikoServer:
             return departments
 
         except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+            print("Не удалось подключиться к серверу " +
+                  "\n" + self.ip + ":" + self.port)
 
     def groups(self, token):
 
@@ -53,17 +54,19 @@ class IikoServer:
             return groups
 
         except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+            print("Не удалось подключиться к серверу " +
+                  "\n" + self.ip + ":" + self.port)
 
     def terminals(self, token):
 
         try:
             terminal = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/corporation/terminals?key=' + token +
-                                  "&from_rev=", timeout=2).content
+                                    "&from_rev=", timeout=2).content
             return terminal
 
         except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+            print("Не удалось подключиться к серверу " +
+                  "\n" + self.ip + ":" + self.port)
 
     def employees(self, token):
 
@@ -73,7 +76,8 @@ class IikoServer:
             return employees
 
         except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+            print("Не удалось подключиться к серверу " +
+                  "\n" + self.ip + ":" + self.port)
 
     def events(self, token):
 
@@ -83,7 +87,8 @@ class IikoServer:
             return events
 
         except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+            print("Не удалось подключиться к серверу " +
+                  "\n" + self.ip + ":" + self.port)
 
     def stores(self, token):
 
@@ -93,21 +98,21 @@ class IikoServer:
             return stores
 
         except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+            print("Не удалось подключиться к серверу " +
+                  "\n" + self.ip + ":" + self.port)
 
     def olap(self, token):
-
         """Olap отчеты"""
         try:
             olap = requests.get('http://' + self.ip + ':' + self.port + '/resto/api/v2/reports/olap/columns?key='
-                                  + token + "&reportType=SALES", timeout=2).content
+                                + token + "&reportType=SALES", timeout=2).content
             return olap
 
         except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+            print("Не удалось подключиться к серверу " +
+                  "\n" + self.ip + ":" + self.port)
 
     def products(self, token):
-
         """Номенклатура"""
         try:
             products = requests.get('http://' + self.ip + ':' + self.port +
@@ -115,10 +120,10 @@ class IikoServer:
             return products
 
         except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
+            print("Не удалось подключиться к серверу " +
+                  "\n" + self.ip + ":" + self.port)
 
     def sales(self, token, departments, date_from, date_to, dish_detail, all_revenue):
-
         """Отчет по выручке"""
         try:
             sales = requests.get('http://' + self.ip + ':' + self.port + 'resto/api/reports/sales?key=' + token +
@@ -128,5 +133,5 @@ class IikoServer:
             return sales
 
         except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" + self.port)
-
+            print("Не удалось подключиться к серверу " +
+                  "\n" + self.ip + ":" + self.port)

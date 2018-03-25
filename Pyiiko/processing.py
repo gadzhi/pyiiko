@@ -3,7 +3,7 @@ import json
 import os
 '''ф-я обработки департаментов'''
 
-#with open('1.json', encoding='utf-8') as json_data:
+# with open('1.json', encoding='utf-8') as json_data:
 #    d = json.load(json_data)
 
 
@@ -27,10 +27,13 @@ def events(xml, event):
     events = file.xpath(
         r'//corporateItemDto/type[text() = "{event}"]/..'.format(event=event))
     '''
+
+
 def find_user(id_user, xml):
 
     file = lxml.etree.fromstring(xml)
-    user = file.xpath(r'.//id[text() = "{id}"]'r'/../name/text()'.format(id=id_user))
+    user = file.xpath(
+        r'.//id[text() = "{id}"]'r'/../name/text()'.format(id=id_user))
 
     return user
 
@@ -42,5 +45,3 @@ def courier_one(file):
         couriers.append(i['id'])
 
     return couriers
-
-

@@ -11,12 +11,14 @@ class FrontWebAPI:
 
     def token(self):
 
-        req = requests.get('http://' + self.url + "/api/login/" + self.moduleid).content
+        req = requests.get('http://' + self.url +
+                           "/api/login/" + self.moduleid).content
         return req
 
     def quit(self, token):
         """Уничтожение токена"""
-        req = requests.get('http://' + self.url + "/api/logout/" + token).content
+        req = requests.get('http://' + self.url +
+                           "/api/logout/" + token).content
         return req
 
     def orders(self, token):
@@ -72,12 +74,3 @@ class FrontWebAPI:
         req = requests.get('http://' + self.url + "/api/kitchenorders?key=" + token,
                            headers=self.content_type).content
         return req
-
-
-
-
-
-
-
-
-

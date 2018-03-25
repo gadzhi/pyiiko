@@ -22,7 +22,8 @@ class IikoBiz:
 
         try:
 
-            organization = requests.get('https://iiko.biz:9900/api/0/organization/list?access_token=' + token).json()
+            organization = requests.get(
+                'https://iiko.biz:9900/api/0/organization/list?access_token=' + token).json()
             return organization
 
         except requests.exceptions.ConnectTimeout:
@@ -32,7 +33,7 @@ class IikoBiz:
 
         try:
             courier = requests.get('https://iiko.biz:9900/api/0/rmsSettings/getCouriers?access_token=' + token +
-                               '&organization=' + org).json()
+                                   '&organization=' + org).json()
             return courier
 
         except requests.exceptions.ConnectTimeout:
@@ -49,13 +50,14 @@ class IikoBiz:
             print("Не удалось получить заказы " + "\n" + self.login)
 
     """Все заказы"""
+
     def all_orders(self, token, org, data_from, data_to, status, terminal_id):
 
         try:
             orders = requests.get('https://iiko.biz:9900/api/0/orders/deliveryOrders?access_token=' + token +
                                   '&organization=' + org + '&dateFrom=' + data_from + '&dateTo=' + data_to +
                                   '&deliveryStatus=' + status + '&deliveryTerminalId=' + terminal_id +
-                                                     '&request_timeout=00%3A02%3A00').json()
+                                  '&request_timeout=00%3A02%3A00').json()
             return orders
 
         except requests.exceptions.ConnectTimeout:
@@ -67,11 +69,8 @@ class IikoBiz:
 
         try:
             history = requests.get('https://iiko.biz:9900/api/0/orders/deliveryHistoryByCustomerId?access_token=' +
-            token + '&organization=' + org + '&customerId=' + customer + '&request_timeout=00%3A02%3A00').json()
+                                   token + '&organization=' + org + '&customerId=' + customer + '&request_timeout=00%3A02%3A00').json()
 
             return history
         except requests.exceptions.ConnectTimeout:
             print("Не получить заказы " + "\n" + self.login)
-
-
-
