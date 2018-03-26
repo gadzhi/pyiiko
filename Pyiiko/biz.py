@@ -97,7 +97,7 @@ class IikoBiz:
             print("Не удалось получить номенклатуру " + "\n" + self.login)
 
     "-------------------Города, улицы, регионы-------------------"
-    
+
     def cities(self, token, org):
         """Список городов"""
         try:
@@ -122,8 +122,8 @@ class IikoBiz:
         """возвращает список улиц города заданной организации"""
         try:
             streets = requests.get(
-                'https://iiko.biz:9900/api/0/citiesList/streets?access_token=' +
-                token + '&organization=' + org + '&city=' + citi_id).json()
+                'https://iiko.biz:9900/api/0/citiesList/streets?access_token='
+                + token + '&organization=' + org + '&city=' + citi_id).json()
             return streets
         except requests.exceptions.ConnectTimeout:
-            print("Не удалось получить список улиц" + "\n" + self.login)       
+            print("Не удалось получить список улиц" + "\n" + self.login)

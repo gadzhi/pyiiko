@@ -9,8 +9,7 @@ import os
 
 def dep_edit(xml):
     file = lxml.etree.fromstring(xml)
-    events = file.xpath(
-        r'//corporateItemDto/type[text() = "DEPARTMENT"]/..')
+    events = file.xpath(r'//corporateItemDto/type[text() = "DEPARTMENT"]/..')
     departments = {}
 
     for event in events:
@@ -21,19 +20,11 @@ def dep_edit(xml):
     return departments
 
 
-def events(xml, event):
-    '''
-    file = lxml.etree.fromstring(xml)
-    events = file.xpath(
-        r'//corporateItemDto/type[text() = "{event}"]/..'.format(event=event))
-    '''
-
-
 def find_user(id_user, xml):
 
     file = lxml.etree.fromstring(xml)
-    user = file.xpath(
-        r'.//id[text() = "{id}"]'r'/../name/text()'.format(id=id_user))
+    user = file.xpath(r'.//id[text() = "{id}"]'
+                      r'/../name/text()'.format(id=id_user))
 
     return user
 
