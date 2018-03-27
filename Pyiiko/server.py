@@ -35,8 +35,10 @@ class IikoServer:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
 
-    def departments(self, token):
+    "----------------------------------Корпорации----------------------------------"
 
+    def departments(self, token):
+        """Иерархия подразделений"""
         try:
             departments = requests.get(
                 'http://' + self.ip + ':' + self.port +
@@ -47,8 +49,21 @@ class IikoServer:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
 
-    def groups(self, token):
+    def stores(self, token):
+        """Список складов"""
+        try:
+            stores = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/corporation/stores?key=' + token,
+                timeout=2).content
+            return stores
 
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def groups(self, token):
+        """Список групп и отделений"""
         try:
             groups = requests.get(
                 'http://' + self.ip + ':' + self.port +
@@ -72,6 +87,63 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
+
+    def departments_find(self, token, code=None):
+        """Поиск подразделения"""
+        try:
+            departments = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                "/resto/api/corporation/departments/search?key=" + token +
+                '&code=' + code).content
+            return departments
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def stores_find(self, token, code):
+        """Список складов"""
+        try:
+            stores = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/corporation/stores/search?key=' + token +
+                '&code=' + code,
+                timeout=2).content
+            return stores
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def groups_find(self, token, name, department_id):
+        """Поиск групп отделений"""
+        try:
+            groups = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/corporation/terminal/search?key=' + token +
+                "&name=" + '&departmentId=' + department_id,
+                timeout=2).content
+            return groups
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def terminals_find(self, token, anonymous=False):
+        """Поиск терминала"""
+        try:
+            terminal = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/corporation/terminals/search?key=' + token +
+                "&anonymous=" + anonymous,
+                timeout=2).content
+            return terminal
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    "----------------------------------Работники----------------------------------"
 
     def employees(self, token):
         """Работники"""
@@ -107,19 +179,6 @@ class IikoServer:
                 '/resto/api/events/metadata?key=' + token,
                 timeout=2).content
             return events
-
-        except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
-                  self.port)
-
-    def stores(self, token):
-
-        try:
-            stores = requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/corporation/stores?key=' + token + "&from_rev=",
-                timeout=2).content
-            return stores
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
@@ -201,23 +260,24 @@ class IikoServer:
         try:
             suppliers = requests.get(
                 'http://' + self.ip + ':' + self.port +
-                '/resto/api/suppliers?key=' + token + '&name=' + name + '&code=' + code,
+                '/resto/api/suppliers?key=' + token + '&name=' + name +
+                '&code=' + code,
                 timeout=2).content
             return suppliers
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
-    
+
     def suppliers_price(self, token, code, date=None):
         """Поиск поставщика"""
         try:
             suppliers = requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/suppliers/' + code + '/pricelist?key=' + token + '&date=' + date,
+                'http://' + self.ip + ':' + self.port + '/resto/api/suppliers/'
+                + code + '/pricelist?key=' + token + '&date=' + date,
                 timeout=2).content
             return suppliers
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
-                  self.port)   
+                  self.port)
