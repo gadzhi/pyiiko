@@ -125,20 +125,6 @@ class IikoServer:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
 
-    def olap(self, token):
-        """Olap отчеты"""
-        try:
-            olap = requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/v2/reports/olap/columns?key=' + token +
-                "&reportType=SALES",
-                timeout=2).content
-            return olap
-
-        except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
-                  self.port)
-
     def products(self, token):
         """Номенклатура"""
         try:
@@ -163,6 +149,33 @@ class IikoServer:
                 '&dishDetails=' + dish_detail + '&allRevenue=' + all_revenue,
                 timeout=2).content
             return sales
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def session(self, token, start=None, end=None):
+        """Информация о кассовых сменах"""
+        try:
+            session = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/events/sessions?key=' + token + '&from_time=' +
+                start + '&to_time=' + end,
+                timeout=2).content
+            return session
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def close_session(self, token):
+        """Номенклатура"""
+        try:
+            products = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/products?key=' + token,
+                timeout=2).content
+            return products
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
