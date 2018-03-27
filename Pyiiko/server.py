@@ -180,3 +180,44 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
+
+    "----------------------------------Поставщики----------------------------------"
+
+    def suppliers(self, token):
+        """Список всех поставщиков"""
+        try:
+            suppliers = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/suppliers?key=' + token,
+                timeout=2).content
+            return suppliers
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def suppliers_find(self, token, name=None, code=None):
+        """Поиск поставщика"""
+        try:
+            suppliers = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/suppliers?key=' + token + '&name=' + name + '&code=' + code,
+                timeout=2).content
+            return suppliers
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+    
+    def suppliers_price(self, token, code, date=None):
+        """Поиск поставщика"""
+        try:
+            suppliers = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/suppliers/' + code + '/pricelist?key=' + token + '&date=' + date,
+                timeout=2).content
+            return suppliers
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)   
