@@ -160,12 +160,12 @@ class IikoServer:
     
     "----------------------------------События----------------------------------"
     
-    def events(self, token, revision=None):
+    def events(self, token, **kwargs):
         """События"""
         try:
             events = requests.get(
                 'http://' + self.ip + ':' + self.port +
-                '/resto/api/events?key=' + token + "&from_rev=" + revision,
+                '/resto/api/events?key=' + token, params = kwargs, 
                 timeout=2).content
             return events
 
