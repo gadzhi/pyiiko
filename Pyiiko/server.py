@@ -157,7 +157,9 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
-
+    
+    "----------------------------------События----------------------------------"
+    
     def events(self, token, revision=None):
         """События"""
         try:
@@ -183,13 +185,28 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
-
+    
+    "----------------------------------Продукты----------------------------------"
+    
     def products(self, token):
         """Номенклатура"""
         try:
             products = requests.get(
                 'http://' + self.ip + ':' + self.port +
                 '/resto/api/products?key=' + token,
+                timeout=2).content
+            return products
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def products_find(self, token, **kwargs):
+        """Номенклатура"""
+        try:
+            products = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/products/search/?key=' + token, params = kwargs,
                 timeout=2).content
             return products
 
