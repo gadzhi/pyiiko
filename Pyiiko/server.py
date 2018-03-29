@@ -43,7 +43,7 @@ class IikoServer:
             return requests.get(
                 'http://' + self.ip + ':' + self.port +
                 "/resto/api/corporation/departments?key=" + token).content
-        
+
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
@@ -401,7 +401,7 @@ class IikoServer:
 
     "----------------------------------Накладные----------------------------------"
 
-    def in_invoice (self, token, **kwargs):
+    def in_invoice(self, token, **kwargs):
         """Выгрузка приходных накладных"""
         try:
             return requests.get(
@@ -414,7 +414,7 @@ class IikoServer:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
 
-    def out_invoice (self, token, **kwargs):
+    def out_invoice(self, token, **kwargs):
         """Выгрузка расходных накладных"""
         try:
             return requests.get(
@@ -426,29 +426,32 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
-        
-    def number_in_invoice (self, token, currentYear=True, **kwargs):
+
+    def number_in_invoice(self, token, currentYear=True, **kwargs):
         """Выгрузка приходной накладной по ее номеру"""
         try:
             return requests.get(
                 'http://' + self.ip + ':' + self.port +
-                '/resto/api/documents/export/incomingInvoice/byNumber?' + token + '&currentYear' + currentYear,
+                '/resto/api/documents/export/incomingInvoice/byNumber?' +
+                token + '&currentYear' + currentYear,
                 params=kwargs,
                 timeout=2).content
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
-                  self.port)   
-    
-    def number_out_invoice (self, token, currentYear=True, **kwargs):
-        """Выгрузка приходной накладной по ее номеру"""
+                  self.port)
+
+    def number_out_invoice(self, token, currentYear=True, **kwargs):
+        """Выгрузка расходной накладной по ее номеру"""
         try:
             return requests.get(
                 'http://' + self.ip + ':' + self.port +
-                '/resto/api/documents/export/outgoingInvoice/byNumber?key=' + token + '&currentYear' + currentYear,
+                '/resto/api/documents/export/outgoingInvoice/byNumber?key=' +
+                token + '&currentYear' + currentYear,
                 params=kwargs,
                 timeout=2).content
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
-                  self.port)  
+                  self.port)
+

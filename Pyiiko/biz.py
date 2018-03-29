@@ -127,3 +127,43 @@ class IikoBiz:
             return streets
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить список улиц" + "\n" + self.login)
+    
+    "--------------------------------------Стоп-листы--------------------------------------"
+
+    def stop_list(self, token, org):
+        """Получить стоп-лист по сети ресторанов"""
+        try:
+            return requests.get(
+                'https://iiko.biz:9900/api/0/stopLists/getDeliveryStopList?access_token=' + token + 
+                '&organization=' + org).json()
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось получить список улиц" + "\n" + self.login)
+
+    "--------------------------------------Журнал событий--------------------------------------"
+
+    def events(self, token, timeout=None):
+        """Получить стоп-лист по сети ресторанов"""
+        try:
+            return requests.get(
+                'https://iiko.biz:9900/api/0/events/events?access_token=' + token + 
+                '&request_timeout=' + timeout).json()
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось получить список улиц" + "\n" + self.login)
+
+    def events_meta(self, token, body, timeout=None):
+        """Получить стоп-лист по сети ресторанов"""
+        try:
+            return requests.post(
+                'https://iiko.biz:9900/api/0/events/eventsMetadata?access_token=' + token + 
+                '&request_timeout=' + timeout, body=body).json()
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось получить список улиц" + "\n" + self.login)
+
+    def events_session(self, token, body, timeout=None):
+        """Получить стоп-лист по сети ресторанов"""
+        try:
+            return requests.post(
+                'https://iiko.biz:9900/api/0/events/sessions?access_token=' + token + 
+                '&request_timeout=' + timeout, body=body).json()
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось получить список улиц" + "\n" + self.login)
