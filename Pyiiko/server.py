@@ -157,15 +157,16 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
-    
+
     "----------------------------------События----------------------------------"
-    
+
     def events(self, token, **kwargs):
         """События"""
         try:
             events = requests.get(
                 'http://' + self.ip + ':' + self.port +
-                '/resto/api/events?key=' + token, params = kwargs, 
+                '/resto/api/events?key=' + token,
+                params=kwargs,
                 timeout=2).content
             return events
 
@@ -185,9 +186,9 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
-    
+
     "----------------------------------Продукты----------------------------------"
-    
+
     def products(self, token):
         """Номенклатура"""
         try:
@@ -206,25 +207,10 @@ class IikoServer:
         try:
             products = requests.get(
                 'http://' + self.ip + ':' + self.port +
-                '/resto/api/products/search/?key=' + token, params = kwargs,
+                '/resto/api/products/search/?key=' + token,
+                params=kwargs,
                 timeout=2).content
             return products
-
-        except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
-                  self.port)
-
-    def sales(self, token, departments, date_from, date_to, dish_detail,
-              all_revenue):
-        """Отчет по выручке"""
-        try:
-            sales = requests.get(
-                'http://' + self.ip + ':' + self.port +
-                'resto/api/reports/sales?key=' + token + '&department=' +
-                departments + '&dateFrom=' + date_from + '&dateTo=' + date_to +
-                '&dishDetails=' + dish_detail + '&allRevenue=' + all_revenue,
-                timeout=2).content
-            return sales
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
@@ -294,6 +280,109 @@ class IikoServer:
                 + code + '/pricelist?key=' + token + '&date=' + date,
                 timeout=2).content
             return suppliers
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    "----------------------------------Отчеты----------------------------------"
+
+    def olap(self, token, **kwargs):
+        """OLAP-отчет"""
+        try:
+            olap = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/reports/olap?key=' + token,
+                params=kwargs,
+                timeout=2).content
+            return olap
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def store_operation(self, token, **kwargs):
+        """Отчет по складским операциям"""
+        try:
+            operation = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/reports/storeOperations?key=' + token,
+                params=kwargs,
+                timeout=2).content
+            return operation
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def store_presets(self, token):
+        """Пресеты отчетов по складским операциям"""
+        try:
+            presets = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/reports/storeReportPresets?key=' + token,
+                timeout=2).content
+            return presets
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def product_expense(self, token, departament, **kwargs):
+        """Расход продуктов по продажам"""
+        try:
+            product = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/reports/productExpense?key=' + token +
+                '&department=' + departament,
+                params=kwargs,
+                timeout=2).content
+            return product
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def sales(self, token, departament, **kwargs):
+        """Отчет по выручке"""
+        try:
+            sale = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/reports/sales?key=' + token + '&department=' +
+                departament,
+                params=kwargs,
+                timeout=2).content
+            return sale
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def mounthly_plan(self, token, departament, **kwargs):
+        """План по выручке за день"""
+        try:
+            plan = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/reports/monthlyIncomePlan?key=' + token +
+                '&department=' + departament,
+                params=kwargs,
+                timeout=2).content
+            return plan
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def ingredient_entry(self, token, departament, **kwargs):
+        """Отчет о вхождении товара в блюдо"""
+        try:
+            ingredient = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/reports/monthlyIncomePlan?key=' + token +
+                '&department=' + departament,
+                params=kwargs,
+                timeout=2).content
+            return ingredient
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
