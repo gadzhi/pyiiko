@@ -40,11 +40,10 @@ class IikoServer:
     def departments(self, token):
         """Иерархия подразделений"""
         try:
-            departments = requests.get(
+            return requests.get(
                 'http://' + self.ip + ':' + self.port +
                 "/resto/api/corporation/departments?key=" + token).content
-            return departments
-
+        
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
@@ -52,11 +51,10 @@ class IikoServer:
     def stores(self, token):
         """Список складов"""
         try:
-            stores = requests.get(
+            return requests.get(
                 'http://' + self.ip + ':' + self.port +
                 '/resto/api/corporation/stores?key=' + token,
                 timeout=2).content
-            return stores
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
@@ -65,11 +63,10 @@ class IikoServer:
     def groups(self, token):
         """Список групп и отделений"""
         try:
-            groups = requests.get(
+            return requests.get(
                 'http://' + self.ip + ':' + self.port +
                 '/resto/api/corporation/groups?key=' + token + "&from_rev=",
                 timeout=2).content
-            return groups
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
@@ -387,3 +384,71 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
+
+    def olap2(self, token, **kwargs):
+        """Поля OLAP-отчета"""
+        try:
+            olap = requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/v2/reports/olap/columns?key=' + token,
+                params=kwargs,
+                timeout=2).json()
+            return olap
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    "----------------------------------Накладные----------------------------------"
+
+    def in_invoice (self, token, **kwargs):
+        """Выгрузка приходных накладных"""
+        try:
+            return requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/documents/export/incomingInvoice?key=' + token,
+                params=kwargs,
+                timeout=2).content
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def out_invoice (self, token, **kwargs):
+        """Выгрузка расходных накладных"""
+        try:
+            return requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/documents/export/outgoingInvoice?key=' + token,
+                params=kwargs,
+                timeout=2).content
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+        
+    def number_in_invoice (self, token, currentYear=True, **kwargs):
+        """Выгрузка приходной накладной по ее номеру"""
+        try:
+            return requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/documents/export/incomingInvoice/byNumber?' + token + '&currentYear' + currentYear,
+                params=kwargs,
+                timeout=2).content
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)   
+    
+    def number_out_invoice (self, token, currentYear=True, **kwargs):
+        """Выгрузка приходной накладной по ее номеру"""
+        try:
+            return requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/documents/export/outgoingInvoice/byNumber?key=' + token + '&currentYear' + currentYear,
+                params=kwargs,
+                timeout=2).content
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)  
