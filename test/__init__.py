@@ -1,2 +1,1 @@
-from .settings import iiko
-from Pyiiko import *
+from test.settings import iiko
