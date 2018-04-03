@@ -209,3 +209,36 @@
 
 
 import requests
+
+
+class Card5:
+
+    def __init__(self, login, password):
+
+        self.login = login
+        self.password = password
+
+    def token(self):
+        try:
+
+            token = requests.get(
+                'https://iiko.biz:9900/api/0/auth/access_token?user_id=' +
+                self.login + '&user_secret=' + self.password,
+                timeout=5).text[1:1]
+            return token
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось получить токен " + "\n" + self.login)
+
+    def organization(self, token):
+
+        try:
+
+            organization = requests.get(
+                'https://iiko.biz:9900/api/0/organization/list?access_token=' +
+                token).json()
+            return organization
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить список организаций " + "\n" + self.login)
