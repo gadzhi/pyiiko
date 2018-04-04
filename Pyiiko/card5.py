@@ -1,4 +1,3 @@
-
 # Apache License
 # Version 2.0, January 2004
 # http://www.apache.org/licenses/
@@ -207,12 +206,10 @@
 #         or implied. See the License for the specific language governing
 #         permissions and limitations under the License.
 
-
 import requests
 
 
 class Card5:
-
     def __init__(self, login, password):
 
         self.login = login
@@ -221,11 +218,10 @@ class Card5:
     def token(self):
         try:
 
-            token = requests.get(
+            return requests.get(
                 'https://iiko.biz:9900/api/0/auth/access_token?user_id=' +
                 self.login + '&user_secret=' + self.password,
                 timeout=5).text[1:1]
-            return token
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить токен " + "\n" + self.login)
@@ -234,10 +230,31 @@ class Card5:
 
         try:
 
-            organization = requests.get(
+            return requests.get(
                 'https://iiko.biz:9900/api/0/organization/list?access_token=' +
                 token).json()
-            return organization
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить список организаций " + "\n" + self.login)
+
+    def corporate_nutritions(self, token, org):
+        """Получить список активных программ корпоративного питания для организации"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/organization/%s/corporate_nutritions?access_token=' + token % org
+            return requests.get(url).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить список организаций " + "\n" + self.login)
+
+    def calculate_checkin_result(self, token, orders):
+        """Рассчитать программу лояльности для заказа"""
+        try:
+            return requests.post(
+                'https://iiko.biz:9900/api/0/orders/calculate_checkin_result?access_token='
+                + token,
+                json=orders).json()
 
         except requests.exceptions.ConnectTimeout:
             print(

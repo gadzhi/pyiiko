@@ -1,4 +1,3 @@
-
 # Apache License
 # Version 2.0, January 2004
 # http://www.apache.org/licenses/
@@ -207,12 +206,10 @@
 #         or implied. See the License for the specific language governing
 #         permissions and limitations under the License.
 
-
 import requests
 
 
 class IikoBiz:
-
     def __init__(self, login, password):
 
         self.login = login
@@ -221,11 +218,10 @@ class IikoBiz:
     def token(self):
         try:
 
-            token = requests.get(
+            return requests.get(
                 'https://iiko.biz:9900/api/0/auth/access_token?user_id=' +
                 self.login + '&user_secret=' + self.password,
                 timeout=5).text[1:1]
-            return token
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить токен " + "\n" + self.login)
@@ -234,10 +230,9 @@ class IikoBiz:
 
         try:
 
-            organization = requests.get(
+            return requests.get(
                 'https://iiko.biz:9900/api/0/organization/list?access_token=' +
                 token).json()
-            return organization
 
         except requests.exceptions.ConnectTimeout:
             print(
@@ -246,10 +241,9 @@ class IikoBiz:
     def courier(self, token, org):
 
         try:
-            courier = requests.get(
+            return requests.get(
                 'https://iiko.biz:9900/api/0/rmsSettings/getCouriers?access_token='
                 + token + '&organization=' + org).json()
-            return courier
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить курьеров " + "\n" + self.login)
@@ -257,27 +251,22 @@ class IikoBiz:
     def orders_courier(self, token, org, courier):
 
         try:
-            orders = requests.get(
+            return requests.get(
                 'https://iiko.biz:9900/api/0/orders/get_courier_orders?access_token='
                 + token + '&organization=' + org + '&courier=' + courier +
                 '&request_timeout=00%3A02%3A00').json()
-            return orders
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить заказы " + "\n" + self.login)
 
     """Все заказы"""
 
-    def all_orders(self, token, org, data_from, data_to, status, terminal_id):
+    def all_orders(self, token, **kwargs):
 
         try:
-            orders = requests.get(
+            return requests.get(
                 'https://iiko.biz:9900/api/0/orders/deliveryOrders?access_token='
-                + token + '&organization=' + org + '&dateFrom=' + data_from +
-                '&dateTo=' + data_to + '&deliveryStatus=' + status +
-                '&deliveryTerminalId=' + terminal_id +
-                '&request_timeout=00%3A02%3A00').json()
-            return orders
+                + token, params=kwargs).json()
 
         except requests.exceptions.ConnectTimeout:
             print("Не получить заказы " + "\n" + self.login)
@@ -287,23 +276,21 @@ class IikoBiz:
     def customer_history(self, token, org, customer):
 
         try:
-            history = requests.get(
+            return requests.get(
                 'https://iiko.biz:9900/api/0/orders/deliveryHistoryByCustomerId?access_token='
                 + token + '&organization=' + org + '&customerId=' + customer +
                 '&request_timeout=00%3A02%3A00').json()
 
-            return history
         except requests.exceptions.ConnectTimeout:
             print("Не получить заказы " + "\n" + self.login)
 
     def nomenclature(self, token, org):
         """Получить дерево номенклатуры"""
         try:
-            nomenclature = requests.get(
+            return requests.get(
                 'https://iiko.biz:9900/api/0/nomenclature/' + org +
                 '?access_token=' + token).json()
 
-            return nomenclature
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить номенклатуру " + "\n" + self.login)
 
@@ -312,30 +299,27 @@ class IikoBiz:
     def cities(self, token, org):
         """Список городов"""
         try:
-            cities = requests.get(
+            return requests.get(
                 'https://iiko.biz:9900/api/0/cities/cities?access_token=' +
                 token + '&organization=' + org).json()
-            return cities
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить список городов" + "\n" + self.login)
 
     def cities_list(self, token, org):
         """возвращает список всех городов заданной организации"""
         try:
-            cities = requests.get(
+            return requests.get(
                 'https://iiko.biz:9900/api/0/citiesList/cities?access_token=' +
                 token + '&organization=' + org).json()
-            return cities
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить список городов" + "\n" + self.login)
 
     def streets(self, token, org, citi_id):
         """возвращает список улиц города заданной организации"""
         try:
-            streets = requests.get(
+            return requests.get(
                 'https://iiko.biz:9900/api/0/citiesList/streets?access_token='
                 + token + '&organization=' + org + '&city=' + citi_id).json()
-            return streets
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить список улиц" + "\n" + self.login)
 
@@ -345,8 +329,8 @@ class IikoBiz:
         """Получить стоп-лист по сети ресторанов"""
         try:
             return requests.get(
-                'https://iiko.biz:9900/api/0/stopLists/getDeliveryStopList?access_token=' + token +
-                '&organization=' + org).json()
+                'https://iiko.biz:9900/api/0/stopLists/getDeliveryStopList?access_token='
+                + token + '&organization=' + org).json()
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить список улиц" + "\n" + self.login)
 
@@ -356,8 +340,8 @@ class IikoBiz:
         """Получить стоп-лист по сети ресторанов"""
         try:
             return requests.get(
-                'https://iiko.biz:9900/api/0/events/events?access_token=' + token +
-                '&request_timeout=' + timeout).json()
+                'https://iiko.biz:9900/api/0/events/events?access_token=' +
+                token + '&request_timeout=' + timeout).json()
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить список улиц" + "\n" + self.login)
 
@@ -365,8 +349,9 @@ class IikoBiz:
         """Получить стоп-лист по сети ресторанов"""
         try:
             return requests.post(
-                'https://iiko.biz:9900/api/0/events/eventsMetadata?access_token=' + token +
-                '&request_timeout=' + timeout, body=body).json()
+                'https://iiko.biz:9900/api/0/events/eventsMetadata?access_token='
+                + token + '&request_timeout=' + timeout,
+                body=body).json()
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить список улиц" + "\n" + self.login)
 
@@ -374,7 +359,8 @@ class IikoBiz:
         """Получить стоп-лист по сети ресторанов"""
         try:
             return requests.post(
-                'https://iiko.biz:9900/api/0/events/sessions?access_token=' + token +
-                '&request_timeout=' + timeout, body=body).json()
+                'https://iiko.biz:9900/api/0/events/sessions?access_token=' +
+                token + '&request_timeout=' + timeout,
+                body=body).json()
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить список улиц" + "\n" + self.login)

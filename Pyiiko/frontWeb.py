@@ -1,4 +1,3 @@
-
 # Apache License
 # Version 2.0, January 2004
 # http://www.apache.org/licenses/
@@ -207,7 +206,6 @@
 #         or implied. See the License for the specific language governing
 #         permissions and limitations under the License.
 
-
 import requests
 
 
@@ -222,7 +220,6 @@ class FrontWebAPI:
 
         return requests.get(
             'http://' + self.url + "/api/login/" + self.moduleid).content
-
 
     def quit(self, token):
         """Уничтожение токена"""
