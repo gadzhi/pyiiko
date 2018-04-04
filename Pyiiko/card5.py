@@ -246,7 +246,7 @@ class Card5:
 
         except requests.exceptions.ConnectTimeout:
             print(
-                "Не удалось получить список организаций " + "\n" + self.login)
+                "Не удалось получить данные " + "\n" + self.login)
 
     def calculate_checkin_result(self, token, orders):
         """Рассчитать программу лояльности для заказа"""
@@ -258,4 +258,69 @@ class Card5:
 
         except requests.exceptions.ConnectTimeout:
             print(
-                "Не удалось получить список организаций " + "\n" + self.login)
+                "Не удалось получить данные " + "\n" + self.login)
+
+    def get_combos_info(self, token, org):
+        """Получить описание всех комбо и категорий комбо для организации"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/orders/get_combos_info?access_token=%s' % token
+            return requests.get(
+                url, params=org).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
+    def get_manual_condition_infos(self, token, org):
+        """Получить ручные условия"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/orders/get_manual_condition_infos?access_token=%s' % token
+            return requests.get(
+                url, params=org).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
+    def check_and_get_combo_price(self, token, combo):
+        """Проверить комбо-блюдо и рассчитать его стоимость"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/orders/check_and_get_combo_price?access_token=%s' % token
+            return requests.post(url, params=org, json=combo).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
+    def get_customer_by_phone(self, token, **kwargs):
+        """Получить данные гостя по его номеру телефона"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/customers/get_customer_by_phone?access_token=%s' % token
+            return requests.get(
+                url, params=kwargs).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
+    def get_customer_by_id(self, token, **kwargs):
+        """Получить данные гостя по его идентификатору"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/customers/get_customer_by_id?access_token=%s' % token
+            return requests.get(
+                url, params=kwargs).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
+    def get_customer_by_card(self, token, **kwargs):
+        """Получить данные гостя организации по его номеру карты"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/customers/get_customer_by_card?access_token=%s' % token
+            return requests.get(
+                url, params=kwargs).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
