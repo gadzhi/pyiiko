@@ -324,3 +324,44 @@ class Card5:
         except requests.exceptions.ConnectTimeout:
             print(
                 "Не удалось получить данные " + "\n" + self.login)
+
+    def create_customer(self, token, customer):
+        """Создать гостя или обновить информацию о госте"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/customers/create_or_update?access_token=%s' % token
+            return requests.post(url, params=org, json=customer).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
+    def add_category_customer(self, token, customer_id, **kwargs):
+        """Добавить новую категорию гостю организации"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/customers/%s/add_category?access_token=%s' % customer_id, token
+            return requests.post(url, params=kwargs).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
+    def remove_category_customer(self, token, customer_id, **kwargs):
+        """Удалить категорию у гостя организации"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/customers/%s/remove_category?access_token=%s' % customer_id, token
+            return requests.post(url, params=kwargs).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
+    def remove_category_customer(self, token, customer_id, **kwargs):
+        """Удалить категорию у гостя организации"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/customers/%s/remove_category?access_token=%s' % customer_id, token
+            return requests.post(url, params=kwargs).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
