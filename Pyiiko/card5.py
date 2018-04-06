@@ -355,13 +355,32 @@ class Card5:
             print(
                 "Не удалось получить данные " + "\n" + self.login)
 
-    def remove_category_customer(self, token, customer_id, **kwargs):
-        """Удалить категорию у гостя организации"""
+    def add_card(self, token, customer_id, org, card):
+        """Создать новую карту и выдать ее гостю организации"""
         try:
-            url = 'https://iiko.biz:9900/api/0/customers/%s/remove_category?access_token=%s' % customer_id, token
+            url = 'https://iiko.biz:9900/api/0/customers/%s/add_card?access_token=%s' % customer_id, token
+            return requests.post(url, params=org, json=card).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
+    def delete_card(self, token, customer_id, **kwargs):
+        """Удалить карту с заданным трэком у гостя организации"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/customers/%s/delete_card?access_token=%s' % customer_id, token
             return requests.post(url, params=kwargs).json()
 
         except requests.exceptions.ConnectTimeout:
             print(
                 "Не удалось получить данные " + "\n" + self.login)
 
+    def refill_balance(self, token, customer_id, **kwargs):
+        """Пополнить заданный кошелек пользователя для заданной организации на заданную сумму."""
+        try:
+            url = 'https://iiko.biz:9900/api/0/customers/%s/refill_balance?access_token=%s' % customer_id, token
+            return requests.post(url, params=kwargs).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
