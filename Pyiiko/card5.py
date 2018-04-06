@@ -375,11 +375,51 @@ class Card5:
             print(
                 "Не удалось получить данные " + "\n" + self.login)
 
-    def refill_balance(self, token, customer_id, **kwargs):
-        """Пополнить заданный кошелек пользователя для заданной организации на заданную сумму."""
+    def add_to_nutrition_organization(self, token, customer_id, **kwargs):
+        """Включить конкретного гостя в конкретную программу корпоративного питания конкретной организации"""
         try:
-            url = 'https://iiko.biz:9900/api/0/customers/%s/refill_balance?access_token=%s' % customer_id, token
+            url = 'https://iiko.biz:9900/api/0/customers/%s/add_to_nutrition_organization?access_token=%s' % customer_id, token
             return requests.post(url, params=kwargs).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
+    def send_sms(self, token, org, **kwargs):
+        """отправить смс"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/organization/%s/add_to_nutrition_organization?access_token=%s' % org, token
+            return requests.post(url, params=kwargs).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
+    def corporate_nutrition_report(self, token, org, **kwargs):
+        """Получает отчет по заказам гостей указанной программы корпоративного питания за указанный период"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/organization/%s/corporate_nutrition_report?access_token=%s' % org, token
+            return requests.get(url, params=kwargs).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
+    def get_customers_by_organization_and_by_period(self, token, **kwargs):
+        """Получает отчет по заказам гостей указанной программы корпоративного питания за указанный период"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/customers/get_customers_by_organization_and_by_period?access_token=%s' % token
+            return requests.get(url, params=kwargs).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
+    def get_categories_by_guests(self, token, users, **kwargs):
+        """Получить категории гостей для запрошенных гостей."""
+        try:
+            url = 'https://iiko.biz:9900/api/0/customers/get_categories_by_guests?access_token==%s' % token
+            return requests.post(url, params=kwargs, json=users).json()
 
         except requests.exceptions.ConnectTimeout:
             print(
