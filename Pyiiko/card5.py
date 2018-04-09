@@ -418,9 +418,40 @@ class Card5:
     def get_categories_by_guests(self, token, users, **kwargs):
         """Получить категории гостей для запрошенных гостей."""
         try:
-            url = 'https://iiko.biz:9900/api/0/customers/get_categories_by_guests?access_token==%s' % token
+            url = 'https://iiko.biz:9900/api/0/customers/get_categories_by_guests?access_token=%s' % token
             return requests.post(url, params=kwargs, json=users).json()
 
         except requests.exceptions.ConnectTimeout:
             print(
                 "Не удалось получить данные " + "\n" + self.login)
+
+    def get_counters_by_guests(self, token, users, **kwargs):
+        """Получить метрики гостей для запрошенных гостей, типов метрик и периодов"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/customers/get_counters_by_guests?access_token=%s' % token
+            return requests.post(url, params=kwargs, json=users).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
+    def get_balances_by_guests(self, token, users, **kwargs):
+        """Получить балансы гостей для запрошенных гостей и конкретного счета программы"""
+        try:
+            url = 'https://iiko.biz:9900/api/0/customers/get_balances_by_guests_and_wallet?access_token=%s' % token
+            return requests.post(url, params=kwargs, json=users).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
+    def transactions_report(self, token, org, **kwargs):
+        """Получает отчет по транзакциям гостей организации за указанный период"""
+        try:
+            url = 'https://iiko.biz:9900//api/0/organization/%s/transactions_report?access_token=%s' % org, token
+            return requests.get(url, params=kwargs).json()
+
+        except requests.exceptions.ConnectTimeout:
+            print(
+                "Не удалось получить данные " + "\n" + self.login)
+
