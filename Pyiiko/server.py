@@ -411,31 +411,6 @@ class IikoServer:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
 
-    def session(self, token, start=None, end=None):
-        """Информация о кассовых сменах"""
-        try:
-            return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/events/sessions?key=' + token + '&from_time=' +
-                start + '&to_time=' + end,
-                timeout=2).content
-
-        except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
-                  self.port)
-
-    def close_session(self, token):
-        """Номенклатура"""
-        try:
-            return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/products?key=' + token,
-                timeout=2).content
-
-        except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
-                  self.port)
-
     "----------------------------------Поставщики----------------------------------"
 
     def suppliers(self, token):
@@ -634,6 +609,35 @@ class IikoServer:
                 '/resto/api/documents/export/outgoingInvoice/byNumber?key=' +
                 token + '&currentYear' + current_year,
                 params=kwargs,
+                timeout=2).content
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    "----------------------------------Получение данных по кассовым сменам:----------------------------------"
+
+    def close_session(self, token, **kwargs):
+        """Список кассовых смен"""
+        try:
+            return requests.get(
+                'http://' + self.ip + ':' + self.port +
+                'resto/api/closeSession/list?key=' +
+                token,
+                params=kwargs,
+                timeout=2).content
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def session(self, token, start=None, end=None):
+        """Информация о кассовых сменах"""
+        try:
+            return requests.get(
+                'http://' + self.ip + ':' + self.port +
+                '/resto/api/events/sessions?key=' + token + '&from_time=' +
+                start + '&to_time=' + end,
                 timeout=2).content
 
         except requests.exceptions.ConnectTimeout:
