@@ -208,22 +208,23 @@
 
 import requests
 import hashlib
+import lxml
+from lxml import etree
+from io import StringIO
 
 
 class IikoServer:
     def __init__(self, ip, port, login, password):
 
-        self.ip = ip
-        self.port = port
         self.login = login
         self.password = hashlib.sha1(password.encode('utf-8')).hexdigest()
+        self.address = 'http://' + ip + ':' + port + '/resto/'
 
-    def token(self):
+    def token(self, ):
         """Получение токена"""
         try:
-            new_token = requests.get('http://' + self.ip + ':' + self.port +
-                                     "/resto/api/auth?login=" + self.login +
-                                     "&" + "pass=" + self.password).text
+            new_token = requests.get(self.address + 'api/auth?login=' + self.login +
+                                    "&pass=" + self.password).text
             print("\nПолучен новый токен: " + new_token)
             return new_token
 
@@ -234,8 +235,7 @@ class IikoServer:
     def quit(self, token):
         """Уничтожение токена"""
         try:
-            logout = requests.get('http://' + self.ip + ':' + self.port +
-                                  "/resto/api/logout?key=" + token).text
+            logout = requests.get(self.address + 'api/logout?key=' + token).text
             print("\nВыход осуществелен: ")
             return logout
 
@@ -243,14 +243,24 @@ class IikoServer:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
 
+    def version(self):
+        """Версия iiko"""
+        try:
+            ver = requests.get(self.address + '/get_server_info.jsp?encoding=UTF-8').text
+            tree = etree.parse(StringIO(ver))
+            version = ''.join(tree.xpath(r'//version/text()'))
+            return version
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
     "----------------------------------Корпорации----------------------------------"
 
     def departments(self, token):
         """Иерархия подразделений"""
         try:
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                "/resto/api/corporation/departments?key=" + token).content
+                self.address + "/api/corporation/departments?key=" + token).content
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
