@@ -223,8 +223,8 @@ class IikoServer:
     def token(self, ):
         """Получение токена"""
         try:
-            new_token = requests.get(self.address + 'api/auth?login=' + self.login +
-                                    "&pass=" + self.password).text
+            url = self.address + 'api/auth?login=' + self.login + "&pass=" + self.password
+            new_token = requests.get(url=url).text
             print("\nПолучен новый токен: " + new_token)
             return new_token
 
@@ -571,7 +571,7 @@ class IikoServer:
 
     "----------------------------------Накладные----------------------------------"
 
-    def in_invoice(self, token, **kwargs):
+    def invoice_in(self, token, **kwargs):
         """Выгрузка приходных накладных"""
         try:
             return requests.get(
@@ -584,7 +584,7 @@ class IikoServer:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
 
-    def out_invoice(self, token, **kwargs):
+    def invoice_out(self, token, **kwargs):
         """Выгрузка расходных накладных"""
         try:
             return requests.get(
@@ -597,7 +597,7 @@ class IikoServer:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
 
-    def number_in_invoice(self, token, current_year=True, **kwargs):
+    def invoice_number_in(self, token, current_year=True, **kwargs):
         """Выгрузка приходной накладной по ее номеру"""
         try:
             return requests.get(
@@ -611,7 +611,7 @@ class IikoServer:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
 
-    def number_out_invoice(self, token, current_year=True, **kwargs):
+    def invoice_number_out(self, token, current_year=True, **kwargs):
         """Выгрузка расходной накладной по ее номеру"""
         try:
             return requests.get(
@@ -620,6 +620,17 @@ class IikoServer:
                 token + '&currentYear' + current_year,
                 params=kwargs,
                 timeout=2).content
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
+                  self.port)
+
+    def production_doc(self, token, xml):
+        """Загрузка акта приготовления"""
+        try:
+            target_url = self.address + '/api/documents/import/productionDocument?key' + token
+            headers = {'Content-type': 'text/xml'}
+            return requests.post(target_url, body=xml, headers=headers, timeout=2).content
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +

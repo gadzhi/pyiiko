@@ -346,7 +346,7 @@ class IikoBiz:
             print("Не удалось получить список улиц" + "\n" + self.login)
 
     def events_meta(self, token, body, timeout=None):
-        """Получить стоп-лист по сети ресторанов"""
+        """Получить мета информацию журнала событий (описание возвращаемых данных)"""
         try:
             return requests.post(
                 'https://iiko.biz:9900/api/0/events/eventsMetadata?access_token='
@@ -356,7 +356,7 @@ class IikoBiz:
             print("Не удалось получить список улиц" + "\n" + self.login)
 
     def events_session(self, token, body, timeout=None):
-        """Получить стоп-лист по сети ресторанов"""
+        """Получить информацию о кассовых сменах"""
         try:
             return requests.post(
                 'https://iiko.biz:9900/api/0/events/sessions?access_token=' +
