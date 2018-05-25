@@ -28,3 +28,6 @@ def test_groups():
 
 def test_terminals():
     return iiko.terminals(token, '0')
+
+def test_emploers():
+    return iiko.terminals(token, '0')

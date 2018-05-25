@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Apache License
 # Version 2.0, January 2004
 # http://www.apache.org/licenses/
@@ -354,10 +355,8 @@ class IikoServer:
     def employees(self, token):
         """Работники"""
         try:
-            return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/employees?key=' + token,
-                timeout=2).content
+            ur = self.address + 'api/employees?key=' + token
+            return requests.get(ur, timeout=2).content
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
