@@ -269,34 +269,30 @@ class IikoServer:
     def stores(self, token):
         """Список складов"""
         try:
+            ur = self.address + 'api/corporation/stores?key=' + token
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/corporation/stores?key=' + token,
+                ur,
                 timeout=2).content
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
 
-    def groups(self, token):
+    def groups(self, token, revision):
         """Список групп и отделений"""
         try:
-            return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/corporation/groups?key=' + token + "&from_rev=",
-                timeout=2).content
+            ur = self.address + 'api/corporation/groups?key=' + token
+            return requests.get( ur, params=revision, timeout=2).content
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
                   self.port)
 
-    def terminals(self, token):
+    def terminals(self, token, revision):
         """Терминалы"""
         try:
-            return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/corporation/terminals?key=' + token + "&from_rev=",
-                timeout=2).content
+            ur = self.address + 'api/corporation/terminals?key=' + token
+            return requests.get(ur, params=revision, timeout=2).content
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу " + "\n" + self.ip + ":" +
