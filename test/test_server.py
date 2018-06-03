@@ -1,6 +1,9 @@
 from test.settings import iiko
 
-token = iiko.token()
+r = iiko.quit()
+print(r)
+#p = iiko.departments_find(token, code="324234")
+#print(p)
 
 def test_token():
     return iiko.token()
