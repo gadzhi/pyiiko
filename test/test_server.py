@@ -1,6 +1,7 @@
 from test.settings import iiko
 try:
-    a = iiko.stores()
+    a = iiko.suppliers_find(name='21312', code='safmkdf')
+    print(a)
 except Exception as e:
     print("Обработать ошибку")
 

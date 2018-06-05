@@ -174,23 +174,23 @@ class IikoServer:
 
     "----------------------------------Продукты----------------------------------"
 
-    def products(self, token):
+    def products(self, includeDeleted=True):
         """Номенклатура"""
         try:
+            urls = self.address + 'api/products?key=' + self._token
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/products?key=' + token,
+                urls, params=includeDeleted,
                 timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def products_find(self, token, **kwargs):
+    def products_find(self, **kwargs):
         """Номенклатура"""
         try:
+            urls = self.address + 'api/products/search/?key=' + self._token
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/products/search/?key=' + token,
+                urls,
                 params=kwargs,
                 timeout=DEFAULT_TIMEOUT).content
 
@@ -199,25 +199,26 @@ class IikoServer:
 
     "----------------------------------Поставщики----------------------------------"
 
-    def suppliers(self, token):
+    def suppliers(self):
         """Список всех поставщиков"""
         try:
+            urls = self.address + 'api/suppliers?key=' + self._token
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/suppliers?key=' + token,
+                urls,
                 timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def suppliers_find(self, token, name=None, code=None):
+    def suppliers_find(self, name='', code=''):
         """Поиск поставщика"""
         try:
+            urls = self.address + 'api/suppliers?key=' + self._token
+            payload = {'name': name, 'code': code}
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/suppliers?key=' + token + '&name=' + name +
-                '&code=' + code,
+                urls, params=payload,
                 timeout=DEFAULT_TIMEOUT).content
+
 
         except Exception as e:
             print(e)
