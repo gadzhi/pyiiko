@@ -1,7 +1,11 @@
 from test.settings import iiko
+try:
+    a = iiko.stores()
+except Exception as e:
+    print("Обработать ошибку")
 
-r = iiko.quit()
-print(r)
+
+
 #p = iiko.departments_find(token, code="324234")
 #print(p)
 
