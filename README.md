@@ -5,7 +5,7 @@
 <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/pypi/l/requests.svg" alt="PyPI version" height="18"></a>
 <a href="https://www.python.org/"><img src="https://img.shields.io/pypi/pyversions/Django.svg" alt="PyPI version" height="18"></a>
 <a href="https://www.python.org/"><img src="https://img.shields.io/pypi/pyversions/Django.svg" alt="PyPI version" height="18"></a>
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/111e9dc6beb9422ca85f4810f01fb33c)](https://www.codacy.com/app/gadzhi/pyiiko?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gadzhi/pyiiko&amp;utm_campaign=Badge_Grade)
+<a class="badge-align" href="https://www.codacy.com/app/gadzhi/pyiiko?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gadzhi/pyiiko&amp;utm_campaign=Badge_Grade"><img src="https://api.codacy.com/project/badge/Grade/111e9dc6beb9422ca85f4810f01fb33c"/></a>
 
    
 

@@ -219,16 +219,15 @@ class IikoServer:
                 urls, params=payload,
                 timeout=DEFAULT_TIMEOUT).content
 
-
         except Exception as e:
             print(e)
 
-    def suppliers_price(self, token, code, date=None):
+    def suppliers_price(self, code, date=None):
         """Поиск поставщика"""
         try:
+            urls = self.address + '/resto/api/suppliers/' + code + '/pricelist?key=' + self._token
             return requests.get(
-                'http://' + self.ip + ':' + self.port + '/resto/api/suppliers/'
-                + code + '/pricelist?key=' + token + '&date=' + date,
+                urls,params=date,
                 timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
@@ -424,5 +423,16 @@ class IikoServer:
         except Exception as e:
             print(e)
 
+    "----------------------------------EDI----------------------------------"
 
+    def edi(self, edi, gln, inn='', kpp='', name='' ):
+        """Список заказов для участника EDI senderId и поставщика seller"""
+        try:
+            urls = self.address + 'edi/' + edi + '/orders/bySeller'
+            payload = {'gln': gln, 'inn': inn, 'kpp': kpp, 'name': name}
+            return requests.get(
+                urls, params=payload,
+                timeout=DEFAULT_TIMEOUT).content
 
+        except Exception as e:
+            print(e)
