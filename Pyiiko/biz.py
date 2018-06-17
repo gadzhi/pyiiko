@@ -266,7 +266,8 @@ class IikoBiz:
         try:
             return requests.get(
                 'https://iiko.biz:9900/api/0/orders/deliveryOrders?access_token='
-                + token, params=kwargs).json()
+                + token,
+                params=kwargs).json()
 
         except requests.exceptions.ConnectTimeout:
             print("Не получить заказы " + "\n" + self.login)
@@ -287,9 +288,8 @@ class IikoBiz:
     def nomenclature(self, token, org):
         """Получить дерево номенклатуры"""
         try:
-            return requests.get(
-                'https://iiko.biz:9900/api/0/nomenclature/' + org +
-                '?access_token=' + token).json()
+            return requests.get('https://iiko.biz:9900/api/0/nomenclature/' +
+                                org + '?access_token=' + token).json()
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось получить номенклатуру " + "\n" + self.login)

@@ -8,7 +8,6 @@ DEFAULT_TIMEOUT = 4
 
 
 class IikoServer:
-
     def __init__(self, ip, login, password, token=None):
 
         self.login = login
@@ -33,7 +32,8 @@ class IikoServer:
         """Уничтожение токена"""
 
         try:
-            logout = requests.get(self.address + 'api/logout?key=' + self._token).text
+            logout = requests.get(
+                self.address + 'api/logout?key=' + self._token).text
             print("\nТокен уничтожен: " + self._token)
             return logout
 
@@ -43,7 +43,8 @@ class IikoServer:
     def version(self):
         """Версия iiko"""
         try:
-            ver = requests.get(self.address + '/get_server_info.jsp?encoding=UTF-8').text
+            ver = requests.get(
+                self.address + '/get_server_info.jsp?encoding=UTF-8').text
             tree = etree.parse(StringIO(ver))
             version = ''.join(tree.xpath(r'//version/text()'))
             return version
@@ -57,8 +58,7 @@ class IikoServer:
         """Иерархия подразделений"""
         try:
             urls = self.address + "api/corporation/departments?key=" + self._token
-            return requests.get(
-                url=urls, timeout=DEFAULT_TIMEOUT).content
+            return requests.get(url=urls, timeout=DEFAULT_TIMEOUT).content
         except Exception as e:
             print(e)
 
@@ -102,8 +102,7 @@ class IikoServer:
         """Список складов"""
         try:
             ur = self.address + 'api/corporation/stores/search?key=' + self._token
-            return requests.get(
-                ur, params=code).content
+            return requests.get(ur, params=code).content
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу")
@@ -113,19 +112,17 @@ class IikoServer:
         try:
             urls = self.address + 'api/corporation/terminal/search?key=' + self._token
             return requests.get(
-                url=urls, params=kwargs,
-                timeout=DEFAULT_TIMEOUT).content
+                url=urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def terminals_search(self,anonymous=False, **kwargs, ):
+    def terminals_search(self, anonymous=False, **kwargs):
         """Поиск терминала"""
         try:
             urls = self.address + 'api/corporation/terminal/search?key=' + self._token + '&anonymous=' + anonymous
             return requests.get(
-                urls,params = kwargs,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
@@ -147,7 +144,8 @@ class IikoServer:
         """События"""
         try:
             ur = self.address + 'api/events?key=' + self._token
-            return requests.get(ur, params=kwargs, timeout=DEFAULT_TIMEOUT).content
+            return requests.get(
+                ur, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
@@ -156,7 +154,8 @@ class IikoServer:
         """Список событий по фильтру событий и номеру заказа"""
         try:
             ur = self.address + 'api/events?key=' + self._token
-            return requests.post(ur, data=body, timeout=DEFAULT_TIMEOUT).content
+            return requests.post(
+                ur, data=body, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
@@ -165,9 +164,7 @@ class IikoServer:
         """Дерево событий"""
         try:
             urls = self.address + 'api/events/metadata?key=' + self._token
-            return requests.get(
-                urls,
-                timeout=DEFAULT_TIMEOUT).content
+            return requests.get(urls, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
@@ -179,8 +176,7 @@ class IikoServer:
         try:
             urls = self.address + 'api/products?key=' + self._token
             return requests.get(
-                urls, params=includeDeleted,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=includeDeleted, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
@@ -190,9 +186,7 @@ class IikoServer:
         try:
             urls = self.address + 'api/products/search/?key=' + self._token
             return requests.get(
-                urls,
-                params=kwargs,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
@@ -203,9 +197,7 @@ class IikoServer:
         """Список всех поставщиков"""
         try:
             urls = self.address + 'api/suppliers?key=' + self._token
-            return requests.get(
-                urls,
-                timeout=DEFAULT_TIMEOUT).content
+            return requests.get(urls, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
@@ -216,8 +208,7 @@ class IikoServer:
             urls = self.address + 'api/suppliers?key=' + self._token
             payload = {'name': name, 'code': code}
             return requests.get(
-                urls, params=payload,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=payload, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
@@ -227,161 +218,137 @@ class IikoServer:
         try:
             urls = self.address + '/resto/api/suppliers/' + code + '/pricelist?key=' + self._token
             return requests.get(
-                urls,params=date,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=date, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
     "----------------------------------Отчеты----------------------------------"
 
-    def olap(self, token, **kwargs):
+    def olap(self, **kwargs):
         """OLAP-отчет"""
         try:
+            urls = self.address + '/resto/api/reports/olap?key' + self._token
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/reports/olap?key=' + token,
-                params=kwargs,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def store_operation(self, token, **kwargs):
+    def store_operation(self, **kwargs):
         """Отчет по складским операциям"""
         try:
+            urls = self.address + '/resto/api/reports/storeOperations?key=' + self._token
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/reports/storeOperations?key=' + token,
-                params=kwargs,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def store_presets(self, token):
+    def store_presets(self):
         """Пресеты отчетов по складским операциям"""
         try:
-            return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/reports/storeReportPresets?key=' + token,
-                timeout=DEFAULT_TIMEOUT).content
+            urls = self.address + '/resto/api/reports/storeReportPresets?key=' + self._token
+            return requests.get(urls, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def product_expense(self, token, departament, **kwargs):
+    def product_expense(self, departament, **kwargs):
         """Расход продуктов по продажам"""
         try:
+            urls = self.address + '/resto/api/reports/productExpense?key=' + self._token + \
+                   '&department=' + departament
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/reports/productExpense?key=' + token +
-                '&department=' + departament,
-                params=kwargs,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def sales(self, token, departament, **kwargs):
+    def sales(self, departament, **kwargs):
         """Отчет по выручке"""
+
         try:
+            urls = self.address + '/resto/api/reports/sales?key=' + self._token + \
+                   '&department=' + departament
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/reports/sales?key=' + token + '&department=' +
-                departament,
-                params=kwargs,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def mounthly_plan(self, token, departament, **kwargs):
+    def mounthly_plan(self, departament, **kwargs):
         """План по выручке за день"""
         try:
+            urls = self.address + '/resto/api/reports/monthlyIncomePlan?key=' + self._token + \
+                   '&department=' + departament
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/reports/monthlyIncomePlan?key=' + token +
-                '&department=' + departament,
-                params=kwargs,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def ingredient_entry(self, token, departament, **kwargs):
+    def ingredient_entry(self, departament, **kwargs):
         """Отчет о вхождении товара в блюдо"""
         try:
+            urls = self.address + '/resto/api/reports/ingredientEntry?key=' + self._token + \
+                   '&department=' + departament
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/reports/monthlyIncomePlan?key=' + token +
-                '&department=' + departament,
-                params=kwargs,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def olap2(self, token, **kwargs):
+    def olap2(self, **kwargs):
         """Поля OLAP-отчета"""
         try:
-            return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/v2/reports/olap/columns?key=' + token,
-                params=kwargs,
-                timeout=DEFAULT_TIMEOUT).json()
+            urls = self.address + '/resto/api/v2/reports/olap/columns?key=' + self._token
+            return requests.get(urls, params=kwargs, timeout=DEFAULT_TIMEOUT).json()
 
         except Exception as e:
             print(e)
 
     "----------------------------------Накладные----------------------------------"
 
-    def invoice_in(self, token, **kwargs):
+    def invoice_in(self, **kwargs):
         """Выгрузка приходных накладных"""
         try:
+            urls = self.address + '/resto/api/documents/export/incomingInvoice?key=' + self._token
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/documents/export/incomingInvoice?key=' + token,
-                params=kwargs,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def invoice_out(self, token, **kwargs):
+    def invoice_out(self, **kwargs):
         """Выгрузка расходных накладных"""
         try:
+            urls = self.address + '/resto/api/documents/export/outgoingInvoice?key=' + self._token
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/documents/export/outgoingInvoice?key=' + token,
-                params=kwargs,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def invoice_number_in(self, token, current_year=True, **kwargs):
+    def invoice_number_in(self, current_year=True, **kwargs):
         """Выгрузка приходной накладной по ее номеру"""
+
         try:
+            urls = self.address + '/resto/api/documents/export/incomingInvoice/byNumber?key=' \
+                   + self._token + '&currentYear' + current_year
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/documents/export/incomingInvoice/byNumber?' +
-                token + '&currentYear' + current_year,
-                params=kwargs,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def invoice_number_out(self, token, current_year=True, **kwargs):
+    def invoice_number_out(self, current_year=True, **kwargs):
         """Выгрузка расходной накладной по ее номеру"""
         try:
+            urls = self.address + '/resto/api/documents/export/outgoingInvoice/byNumber?key=' \
+                   + self._token + '&currentYear' + current_year
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/documents/export/outgoingInvoice/byNumber?key=' +
-                token + '&currentYear' + current_year,
-                params=kwargs,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
@@ -391,48 +358,45 @@ class IikoServer:
         try:
             target_url = self.address + '/api/documents/import/productionDocument?key' + token
             headers = {'Content-type': 'text/xml'}
-            return requests.post(target_url, body=xml, headers=headers, timeout=DEFAULT_TIMEOUT).content
+            return requests.post(
+                target_url, body=xml, headers=headers,
+                timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
     "----------------------------------Получение данных по кассовым сменам:----------------------------------"
 
-    def close_session(self, token, **kwargs):
+    def close_session(self, **kwargs):
         """Список кассовых смен"""
         try:
+            urls = self.address + 'resto/api/closeSession/list?key=' \
+                   + self._token
             return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                'resto/api/closeSession/list?key=' +
-                token,
-                params=kwargs,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def session(self, token, start=None, end=None):
+    def session(self, start=None, end=None):
         """Информация о кассовых сменах"""
         try:
-            return requests.get(
-                'http://' + self.ip + ':' + self.port +
-                '/resto/api/events/sessions?key=' + token + '&from_time=' +
-                start + '&to_time=' + end,
-                timeout=DEFAULT_TIMEOUT).content
+            urls = self.address + '/resto/api/events/sessions?key=' \
+                   + self._token + '&from_time=' + start + '&to_time=' + end
+            return requests.get(urls, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
     "----------------------------------EDI----------------------------------"
 
-    def edi(self, edi, gln, inn='', kpp='', name='' ):
+    def edi(self, edi, gln, inn='', kpp='', name=''):
         """Список заказов для участника EDI senderId и поставщика seller"""
         try:
             urls = self.address + 'edi/' + edi + '/orders/bySeller'
             payload = {'gln': gln, 'inn': inn, 'kpp': kpp, 'name': name}
             return requests.get(
-                urls, params=payload,
-                timeout=DEFAULT_TIMEOUT).content
+                urls, params=payload, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
