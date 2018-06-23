@@ -8,7 +8,18 @@ DEFAULT_TIMEOUT = 4
 
 
 class IikoServer:
-    def __init__(self, ip, login, password, token=None):
+    """Class illustrating how to document python source code
+
+        This class provides some basic methods for incrementing, decrementing,
+        and clearing a number.
+
+        .. note::
+
+            This class does not provide any significant functionality that the
+            python does not already include. It is just for illustrative purposes.
+    """
+
+    def __init__(self, ip=None, login=None, password=None, token=None):
 
         self.login = login
         self.password = hashlib.sha1(password.encode('utf-8')).hexdigest()
@@ -19,7 +30,17 @@ class IikoServer:
         return self._token
 
     def get_token(self):
-        """Получение токена"""
+        """Метод получает новый токен
+        .. note::
+
+            при авторизации вы занимаете один слот лицензии. Token,
+            который вы получаете при авторизации, можно использовать до того момента,
+             пока он не протухнет ( не перестанет работать). И если у вас только одна
+             лицензия сервера, а вы уже получили token, следующее обращение к серверу за
+             token-ом вызовет ошибку. Если вам негде хранить token при работе с сервером API,
+             рекомендуем вам разлогиниться, что приводит к отпусканию лицензии.
+
+            """
 
         try:
             url = self.address + 'api/auth?login=' + self.login + "&pass=" + self.password
@@ -28,7 +49,7 @@ class IikoServer:
         except Exception as e:
             print(e)
 
-    def quit(self):
+    def quit_token(self):
         """Уничтожение токена"""
 
         try:
@@ -41,7 +62,7 @@ class IikoServer:
             print("Не удалось подключиться к серверу")
 
     def version(self):
-        """Версия iiko"""
+        """Какая версия iiko RMS"""
         try:
             ver = requests.get(
                 self.address + '/get_server_info.jsp?encoding=UTF-8').text
@@ -55,7 +76,24 @@ class IikoServer:
     "----------------------------------Корпорации----------------------------------"
 
     def departments(self):
-        """Иерархия подразделений"""
+        """Иерархия подразделений
+
+        .. csv-table:: Типы подразделений
+           :header: "Код", "Наименование"
+           :widths: 15, 20
+
+           "CORPORATION", Корпорация
+           "JURPERSON", Юридическое лицо
+           ORGDEVELOPMENT, Структурное подразделение
+           DEPARTMENT, Торговое предприятие
+           MANUFACTURE, Производство
+           CENTRALSTORE, Центральный склад
+           CENTRALOFFICE, Центральный офис
+           SALEPOINT, Точка продаж
+           STORE, Склад
+
+
+        """
         try:
             urls = self.address + "api/corporation/departments?key=" + self._token
             return requests.get(url=urls, timeout=DEFAULT_TIMEOUT).content
@@ -99,7 +137,11 @@ class IikoServer:
             print(e)
 
     def stores_find(self, code):
-        """Список складов"""
+        """Список складов.
+
+
+        :param code: Код торгового предприятия. Значение элемента <code> из структуры corporateItemDto.Регулярное выражение. Если задать просто строку, то ищет любое вхождение этой строки в код ТП с учетом регистра
+        """
         try:
             ur = self.address + 'api/corporation/stores/search?key=' + self._token
             return requests.get(ur, params=code).content
@@ -108,7 +150,12 @@ class IikoServer:
             print("Не удалось подключиться к серверу")
 
     def groups_search(self, **kwargs):
-        """Поиск групп отделений"""
+        """Поиск групп отделений.
+
+
+        :param name: Название группы (regex значение).
+        :param departmentId: ID подразделения (uuid)
+        """
         try:
             urls = self.address + 'api/corporation/terminal/search?key=' + self._token
             return requests.get(
@@ -118,7 +165,15 @@ class IikoServer:
             print(e)
 
     def terminals_search(self, anonymous=False, **kwargs):
-        """Поиск терминала"""
+        """Поиск терминала.
+
+
+        :param anonymous: (bool) Фронты имеют anonymous=false, бекофисы и системные терминалы — true.
+        :param name: (regex) - (optional) Имя терминала в том виде, как он отображается в бекофисе.
+        :param computerName: (regex) - (optional) Имя компьютера
+
+        :return: Список terminalDto, если существуют подходящие терминалы
+        """
         try:
             urls = self.address + 'api/corporation/terminal/search?key=' + self._token + '&anonymous=' + anonymous
             return requests.get(
@@ -141,7 +196,20 @@ class IikoServer:
     "----------------------------------События----------------------------------"
 
     def events(self, **kwargs):
-        """События"""
+        """Список событий.
+
+
+        :param from_time: (yyyy-MM-ddTHH:mm:ss.SSS) - (optional) Время с которого запрашиваются события, в формате ISO: yyyy-MM-ddTHH:mm:ss.SSS, по-умолчанию – начало текущих суток.
+        :param to_time: (yyyy-MM-ddTHH:mm:ss.SSS) - (optional) Время по которое (не включительно) запрашиваются \
+        события в формате ISO: yyyy-MM-ddTHH:mm:ss.SSS,, по-умолчанию граница не установлена.
+        :param from_rev: (int) - (optional) Ревизия, с которой запрашиваются события, число. Каждый ответ \
+        содержит тэг revision, значение которого соответствует ревизии, по которую включительно отданы события; \
+        при новых запросах следует использовать revision + 1 (revision из предыдущего ответа) для получения только \
+        новых событий. В штатном режиме одно и тоже событие повторно с разными ревизиями не приходит, однако \
+        такой гарантии не даётся. ID (UUID) события уникален, может использоваться в качестве ключа.
+
+        :return: Список событий в формате eventsList (см. XSD Список событий)
+        """
         try:
             ur = self.address + 'api/events?key=' + self._token
             return requests.get(
@@ -151,7 +219,29 @@ class IikoServer:
             print(e)
 
     def events_filter(self, body):
-        """Список событий по фильтру событий и номеру заказа"""
+        """
+        Список событий по фильтру событий и номеру заказа.
+
+
+        :param body: Список id событий, по которым производится фильтрация (application/xml).
+
+        Пример body
+
+        .. code-block:: xml
+
+            <eventsRequestData>
+                <events>
+                    <event>orderCancelPrecheque</event>
+                    <event>orderPaid</event>
+                </events>
+                <orderNums>
+                    <orderNum>175658</orderNum>
+                </orderNums>
+            </eventsRequestData>
+
+        :return: Дерево событий в формате groupsList (см. XSD Дерево событий).
+        """
+
         try:
             ur = self.address + 'api/events?key=' + self._token
             return requests.post(
@@ -161,7 +251,11 @@ class IikoServer:
             print(e)
 
     def events_meta(self):
-        """Дерево событий"""
+        """
+        Дерево событий.
+
+
+        """
         try:
             urls = self.address + 'api/events/metadata?key=' + self._token
             return requests.get(urls, timeout=DEFAULT_TIMEOUT).content
@@ -172,7 +266,33 @@ class IikoServer:
     "----------------------------------Продукты----------------------------------"
 
     def products(self, includeDeleted=True):
-        """Номенклатура"""
+        """Номенклатура.
+
+        .. csv-table:: Тип элемента номенклатуры
+           :header: "Код", "Наименование"
+           :widths: 15, 20
+
+           "GOODS", "Товар"
+           "DISH", Блюдо
+           PREPARED, Заготовка
+           SERVICE, Услуга
+           MODIFIER, Модификатор
+           OUTER, Внешние товары
+           PETROL, Топливо
+           RATE, Тариф
+
+        .. csv-table:: Типы групп продукта
+           :header: "Код", "Наименование", Комментарий
+           :widths: 15, 20, 20
+
+           "PRODUCTS", "Продукт",
+           "MODIFIERS", Модификатор, "Используется только в номенклатуре, которая загружается /
+           и выгружается в/из RKeeper/StoreHouse"
+
+
+        :param includeDeleted: (bool) - (optional) Включать ли удаленные элементы номенклатуры в результат. По умолчанию false. Реализовано в 5.0 и новее.
+
+        """
         try:
             urls = self.address + 'api/products?key=' + self._token
             return requests.get(
@@ -182,7 +302,20 @@ class IikoServer:
             print(e)
 
     def products_find(self, **kwargs):
-        """Номенклатура"""
+        """Поиск номенклатуры
+
+        :param includeDeleted: (bool) Включать ли удаленные элементы номенклатуры в результат. По умолчанию false. Реализовано в 5.0 и новее.
+        :param name: (regex) - (optional) Название.
+        :param code: (regex) - (optional) Код быстрого набора в IikoFront.
+        :param mainUnit: (regex) - (optional) Базовая единица измерения.
+        :param num: (regex) - (optional) Артикул.
+        :param cookingPlaceType: (regex) - (optional) Тип места приготовления.
+        :param productGroupType: (regex) - (optional) Тип родительской группы.
+        :param productType: (regex) - (optional) Тип номенклатуры.
+
+        Выгрузка и поиск идет по всем неудаленным элементам номенклатуры. Включая товары поставщика. Т.к. сейчас нет возможности удалить товар поставщика, то выгрузка потянет все товары поставщика, даже те, которые реально не используются и не участвуют ни в одной связке товар у нас - товар поставщика.
+
+        """
         try:
             urls = self.address + 'api/products/search/?key=' + self._token
             return requests.get(
@@ -303,7 +436,8 @@ class IikoServer:
         """Поля OLAP-отчета"""
         try:
             urls = self.address + '/resto/api/v2/reports/olap/columns?key=' + self._token
-            return requests.get(urls, params=kwargs, timeout=DEFAULT_TIMEOUT).json()
+            return requests.get(
+                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).json()
 
         except Exception as e:
             print(e)
@@ -343,7 +477,10 @@ class IikoServer:
             print(e)
 
     def invoice_number_out(self, current_year=True, **kwargs):
-        """Выгрузка расходной накладной по ее номеру"""
+        """Выгрузка расходной накладной по ее номеру.
+
+
+        :param current_year: Включать ли текущий год, по умолчанию ``True``."""
         try:
             urls = self.address + '/resto/api/documents/export/outgoingInvoice/byNumber?key=' \
                    + self._token + '&currentYear' + current_year
