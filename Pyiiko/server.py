@@ -327,7 +327,10 @@ class IikoServer:
     "----------------------------------Поставщики----------------------------------"
 
     def suppliers(self):
-        """Список всех поставщиков"""
+        """Список всех поставщиков
+
+        :return: Список всех поставщиков. Структура employees
+        """
         try:
             urls = self.address + 'api/suppliers?key=' + self._token
             return requests.get(urls, timeout=DEFAULT_TIMEOUT).content
@@ -336,7 +339,13 @@ class IikoServer:
             print(e)
 
     def suppliers_find(self, name='', code=''):
-        """Поиск поставщика"""
+        """Поиск поставщика
+
+        :param name: (regex) - (optional) регулярное выражение имени поставщика.
+        :param code: (regex) - (optional) регулярное выражение кода поставщика.
+
+        :return: Список найденных поставщиков. Структура employees (см. XSD Сотрудники)
+        """
         try:
             urls = self.address + 'api/suppliers?key=' + self._token
             payload = {'name': name, 'code': code}
@@ -347,7 +356,10 @@ class IikoServer:
             print(e)
 
     def suppliers_price(self, code, date=None):
-        """Поиск поставщика"""
+        """Поиск поставщика
+
+        :param code: (date - DD.MM.YYYY) - (optional) Дата начала действия прайс-листа, необязательный. Если параметр не указан, возвращается последний прайс-лист.
+        """
         try:
             urls = self.address + '/resto/api/suppliers/' + code + '/pricelist?key=' + self._token
             return requests.get(
@@ -359,7 +371,41 @@ class IikoServer:
     "----------------------------------Отчеты----------------------------------"
 
     def olap(self, **kwargs):
-        """OLAP-отчет"""
+        """OLAP-отчет
+
+        :param report: (Тип отчета)
+            | ``SALES`` - По продажам.
+            | ``TRANSACTIONS`` - По транзакциям.
+            | ``DELIVERIES`` - По доставкам.
+            | ``STOCK`` - Контролю хранения.
+        :param groupRow: (Поля группировки) например:
+            ``groupRow=WaiterName&groupRow=OpenTime.``
+
+            Для определения списка доступных полей см.
+                - Описание полей OLAP отчета по продажам.
+                - Описание полей OLAP отчета по проводкам.
+                - Описание полей OLAP отчета по доставкам.
+            По полю можно проводить группировку, если значение в колонке Grouping для поля равно true.
+
+        :param groupCol: Поля для выделения значений по колонкам.
+
+            Для определения списка доступных полей см.
+                - Описание полей OLAP отчета по продажам.
+                - Описание полей OLAP отчета по проводкам.
+                - Описание полей OLAP отчета по доставкам.
+            По полю можно проводить группировку, если значение в колонке Grouping для поля равно true.
+
+        :param agr: Поля агрегации, например: agr=DishDiscountSum&agr=VoucherNum
+
+            Для определения списка доступных полей см.
+                - Описание полей OLAP отчета по продажам.
+                - Описание полей OLAP отчета по проводкам.
+                - Описание полей OLAP отчета по доставкам.
+            По полю можно проводить группировку, если значение в колонке Grouping для поля равно true.
+
+        :return: Структура report
+
+        """
         try:
             urls = self.address + '/resto/api/reports/olap?key' + self._token
             return requests.get(
@@ -368,18 +414,36 @@ class IikoServer:
         except Exception as e:
             print(e)
 
-    def store_operation(self, **kwargs):
-        """Отчет по складским операциям"""
+    def store_operation(self, stores=None, documentTypes=None, productDetalization=True, showCostCorrections=True,
+                         presetId=None):
+        """Отчет по складским операциям
+
+        :param dateFrom: (DD.MM.YYYY) Начальная дата.
+        :param dateTo: (DD.MM.YYYY) Конечная дата.
+        :param stores: (GUID) - (optional) Список складов, по которым строится отчет. Если null или empty, строится по всем складам.
+        :param documentTypes: () - (optional) Типы документов, которые следует включать. Если null или пуст, включаются все документы.
+        :param productDetalization: (boolean) - (по умолчанию true) Если истина, отчет включает информацию по товарам, но не включает дату. Если ложь - отчет включает каждый документ одной строкой и заполняет суммы документов.
+        :param showCostCorrections: (boolean) - Включать ли коррекции себестоимости. Данная опция учитывается только если задан фильтр по типам документов. В противном случае коррекции включаются.
+        :param presetId: (GUID) - (optional) Id преднастроенного отчета. Если указан, то все настройки, кроме дат, игнорируются.
+
+        :returns: Структура storeReportPresets (см. XSD Пресеты отчетов по складским операциям).
+
+        """
         try:
             urls = self.address + '/resto/api/reports/storeOperations?key=' + self._token
             return requests.get(
-                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
+                urls, params={stores, documentTypes, productDetalization,
+                              showCostCorrections, presetId}, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
     def store_presets(self):
-        """Пресеты отчетов по складским операциям"""
+        """Пресеты отчетов по складским операциям
+
+        :returns: Структура storeReportPresets (см. XSD Пресеты отчетов по складским операциям).
+
+        """
         try:
             urls = self.address + '/resto/api/reports/storeReportPresets?key=' + self._token
             return requests.get(urls, timeout=DEFAULT_TIMEOUT).content
@@ -388,30 +452,58 @@ class IikoServer:
             print(e)
 
     def product_expense(self, departament, **kwargs):
-        """Расход продуктов по продажам"""
+        """Расход продуктов по продажам
+
+        :param department: (GUID) Подразделение
+        :param dateFrom: (DD.MM.YYYY) Начальная дата.
+        :param dateTo: (DD.MM.YYYY) Конечная дата.
+        :param hourFrom: (hh) Час начала интервала выборки в сутках (по умолчанию -1, все время), по умолчанию -1.
+        :param hourTo: (hh) Час окончания интервала выборки в сутках (по умолчанию -1, все время), по умолчанию -1.
+
+        :returns: Структура dayDishValue (см. XSD Расход продуктов по продажам)
+        """
         try:
-            urls = self.address + '/resto/api/reports/productExpense?key=' + self._token + \
-                   '&department=' + departament
+            urls = self.address + '/resto/api/reports/productExpense?key=' + self._token
             return requests.get(
-                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
+                urls, params={departament,  kwargs}, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def sales(self, departament, **kwargs):
-        """Отчет по выручке"""
+    def sales(self, departament, dishDetails=False, allRevenue=True, **kwargs):
+        """Отчет по выручке
+
+        :param department: (GUID) Подразделение
+        :param dateFrom: (DD.MM.YYYY) Начальная дата.
+        :param dateTo: (DD.MM.YYYY) Конечная дата.
+        :param hourFrom: (hh) Час начала интервала выборки в сутках (по умолчанию -1, все время), по умолчанию -1.
+        :param hourTo: (hh) Час окончания интервала выборки в сутках (по умолчанию -1, все время), по умолчанию -1.
+        :param dishDetails: (boolean) Включать ли разбивку по блюдам (true/false), по умолчанию false.
+        :param allRevenue: (boolean)  Фильтрация по типам оплат (true - все типы, false - только выручка), по умолчанию true.
+
+        :returns: Структура dayDishValue (см. XSD Отчет по выручке)
+        """
 
         try:
             urls = self.address + '/resto/api/reports/sales?key=' + self._token + \
                    '&department=' + departament
             return requests.get(
-                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
+                urls, params={dishDetails, allRevenue, kwargs}, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
     def mounthly_plan(self, departament, **kwargs):
-        """План по выручке за день"""
+        """План по выручке за день
+
+        :param department: (GUID) Подразделение
+        :param dateFrom: (DD.MM.YYYY) Начальная дата.
+        :param dateTo: (DD.MM.YYYY) Конечная дата.
+
+        :returns: Структура budgetPlanItemDtoes (см. XSD План по выручке за день)
+
+
+        """
         try:
             urls = self.address + '/resto/api/reports/monthlyIncomePlan?key=' + self._token + \
                    '&department=' + departament
@@ -421,27 +513,109 @@ class IikoServer:
         except Exception as e:
             print(e)
 
-    def ingredient_entry(self, departament, **kwargs):
-        """Отчет о вхождении товара в блюдо"""
+    def ingredient_entry(self, departament, includeSubtree = False, **kwargs):
+        """Отчет о вхождении товара в блюдо
+
+        :param department: (GUID) Подразделение
+        :param dateFrom: (DD.MM.YYYY) Начальная дата.
+        :param dateTo: (DD.MM.YYYY) Конечная дата.
+        :param productArticle: (string) Артикул продукта (приоритет поиска:productArticle, product)
+        :param includeSubtree: (bool) - (optional) Включать ли в отчет строки поддеревьев (по умолчанию false)
+
+        :returns: Структура budgetPlanItemDtoes (см. XSD План по выручке за день)
+        """
         try:
-            urls = self.address + '/resto/api/reports/ingredientEntry?key=' + self._token + \
-                   '&department=' + departament
+            urls = self.address + '/resto/api/reports/ingredientEntry?key=' + self._token
             return requests.get(
-                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
+                urls, params={departament, includeSubtree, kwargs}, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def olap2(self, **kwargs):
-        """Поля OLAP-отчета"""
+    def olap2(self, reportType, groupingAllowed=False, filteringAllowed=False, json=None):
+        """Поля OLAP-отчета
+
+        :param reportType: (Тип отчета)
+            | ``SALES`` - По продажам.
+            | ``TRANSACTIONS`` - По транзакциям.
+            | ``DELIVERIES`` - По доставкам.
+        :param json: (optional) Json с полями
+        :type json: json
+
+        .. code-block:: json
+
+           {
+              "FieldName":{
+                "name":"StringValue",
+                "type":"StringValue",
+                "aggregationAllowed":"booleanValue",
+                "groupingAllowed":"booleanValue",
+                "filteringAllowed":"booleanValue",
+                "tags":[
+                  "StringValue1",
+                  "StringValue2",
+                  "...",
+                  "StringValueN"
+                ]
+              }
+            }
+
+        :param FieldName: Название колонки отчета. Именно это название используется для получения данных отчета
+        :type FieldName: string
+        :param name: Название колонки отчета в iikoOffice. Справочная информация.
+        :type name: string
+        :param type: Тип поля. Возможны следующие значения:
+        :type type: string
+
+
+        | ENUM - Перечислимые значения
+        | STRING - Строка
+        | ID - Внутренний идентификатор объекта в iiko (начиная с 5.0).
+        | DATETIME - Дата и время
+        | INTEGER - Целое
+        | PERCENT - Процент (от 0 до 1)
+        | DURATION_IN_SECONDS - Длительность в секундах
+        | AMOUNT - Количество
+        | MONEY - Денежная сумма
+
+        :param aggregationAllowed: (optional) Если true, то по данной колонке можно агрегировать данные
+        :type aggregationAllowed: bool
+        :param groupingAllowed: (optional) Если true, то по данной колонке можно группировать данные. По умолчанию false.
+        :type groupingAllowed: bool
+        :param filteringAllowed: (optional) Если true, то по данной колонке можно фильтровать данные. По умолчанию false.
+        :type filteringAllowed: bool
+        :param tags: (optional) Список категорий отчета, к которому относится данное поле. Справочная информация. Соответствует списку в верхнем правом углу конструктора отчета в iikoOffice.
+        
+        :return: Json структура списка полей с информацией по возможностям фильтрации, агрегации и группировки.Устаревшие поля (deprecated) не выводятся.
+
+        """
         try:
             urls = self.address + '/resto/api/v2/reports/olap/columns?key=' + self._token
             return requests.get(
-                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).json()
+                urls, params={reportType, groupingAllowed, filteringAllowed}, json=json, timeout=DEFAULT_TIMEOUT).json()
 
         except Exception as e:
             print(e)
 
+    def reports_balance(self, timestamp, account=None, counteragent=None, department=None):
+        """
+        Балансы по счетам, контрагентам и подразделениям
+
+        :param timestamp: учетная-дата время отчета в формате yyyy-MM-dd'T'HH:mm:ss.
+        :type timestamp: time
+        :param account: (optional)  id счета для фильтрации (можно указать несколько).
+        :type timestamp: string
+        :param counteragent: (optional) id контрагента для фильтрации (необязательный, можно указать несколько).
+        :department: (optional) id подразделения для фильтрации (необязательный, можно указать несколько).
+        
+        """
+        try:
+            urls = self.address + '/resto/reports/balance/counteragents?key=' + self._token
+            return requests.get(
+                urls, params={timestamp, account, counteragent, department}, timeout=DEFAULT_TIMEOUT).json()
+
+        except Exception as e:
+            print(e)
     "----------------------------------Накладные----------------------------------"
 
     def invoice_in(self, **kwargs):
