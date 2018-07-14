@@ -5,6 +5,7 @@ __pycache__/
 /_pytest
 .pytest_cache
 *.py[cod]
+test/213.py
 *$py.class
 *.db
 

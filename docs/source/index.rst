@@ -3,16 +3,23 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Pyiiko's documentation!
+Документация Pyiiko!
 ==================================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+Добро пожаловать на страницу документации **Pyiiko**. Это библиотека для работы с iiko API. Пожалуйста,
+предварительно ознакомтесь с документацией `на сайте iiko <http://api.iiko.ru>`_.
+
+
+**Пример использования:**::
+
+    >>> from Pyiiko import IikoServer
+    >>> i = IikoServer(ip = 'your ip', login = 'login', password = 'password')
+    >>> i.token()
+    Ваш токен: 2klm423423o4fdlkmdsr234
 
 
 
-Indices and tables
+Оглавление
 ==================
 
 * :ref:`genindex`

@@ -8,15 +8,9 @@ DEFAULT_TIMEOUT = 4
 
 
 class IikoServer:
-    """Class illustrating how to document python source code
+    """Класс отвечающий за работы с iikoSeverApi
 
-        This class provides some basic methods for incrementing, decrementing,
-        and clearing a number.
 
-        .. note::
-
-            This class does not provide any significant functionality that the
-            python does not already include. It is just for illustrative purposes.
     """
 
     def __init__(self, ip=None, login=None, password=None, token=None):
@@ -50,11 +44,13 @@ class IikoServer:
             print(e)
 
     def quit_token(self):
-        """Уничтожение токена"""
+        """Уничтожение токена
+
+        """
 
         try:
             logout = requests.get(
-                self.address + 'api/logout?key=' + self._token).text
+                self.address + 'api/logout?key=' + self._token)
             print("\nТокен уничтожен: " + self._token)
             return logout
 
@@ -62,7 +58,10 @@ class IikoServer:
             print("Не удалось подключиться к серверу")
 
     def version(self):
-        """Какая версия iiko RMS"""
+        """Позволяет узнать версию iiko
+
+        :returns: Версия iiko в формате string
+        """
         try:
             ver = requests.get(
                 self.address + '/get_server_info.jsp?encoding=UTF-8').text
@@ -101,7 +100,12 @@ class IikoServer:
             print(e)
 
     def stores(self):
-        """Список складов"""
+        """Список складов
+
+        :returns: Все склады ТП в виде структуры corporateItemDto
+
+
+        """
         try:
             ur = self.address + 'api/corporation/stores?key=' + self._token
             return requests.get(ur, timeout=DEFAULT_TIMEOUT).content
@@ -109,7 +113,14 @@ class IikoServer:
             print(e)
 
     def groups(self):
-        """Список групп и отделений"""
+        """Список групп и отделений
+
+        :returns: Все группы отделений, отделения и точки продаж ТП в виде структуры groupDto. \
+                    В группе отделений может быть несколько точек продаж, но главная касса
+                    (свойство groupDto/pointOfSaleDtoes/pointOfSaleDto/main=true) может быть подключена только
+                    к одной из них. В iikoChain информация о кассе точки продаж
+                    (groupDto/pointOfSaleDtoes/pointOfSaleDto/cashRegisterInfo) может отсутствовать.
+        """
         try:
             ur = self.address + 'api/corporation/groups?key=' + self._token
             return requests.get(ur, timeout=DEFAULT_TIMEOUT).content
@@ -118,7 +129,11 @@ class IikoServer:
             print("Не удалось подключиться к серверу")
 
     def terminals(self):
-        """Терминалы"""
+        """Список терминалов.
+
+        :returns: Все терминалы ТП в виде структуры terminalDto. Как правило, интересны только фронтовые \
+                    терминалы, см. поиск терминалов /corporation/terminal/search
+        """
         try:
             ur = self.address + 'api/corporation/terminals?key=' + self._token
             return requests.get(ur, timeout=DEFAULT_TIMEOUT).content
@@ -126,12 +141,23 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу")
 
-    def departments_find(self, **kwargs):
-        """Поиск подразделения"""
+    def departments_find(self, code):
+        """Поиск подразделения.
+
+        :param name: (optional) Код торгового предприятия. Значение элемента <code> из структуры corporateItemDto \
+                                    Регулярное выражение. Если задать просто строку, то ищет любое вхождение этой строки в код ТП с учетом регистра
+
+
+        :type code: [departmentCode]
+
+        :returns: Структура corporateItemDto, если существует подразделение с данным кодом. \
+                    Поиск торгового предприятия по коду. Имеет смысл только для подразделений с типом DEPARTMENT \
+                    и в основном только в iikoChain, т.к. в рамках iikoRMS только одна сущность с таким типом
+        """
         try:
             ur = self.address + 'api/corporation/departments/search?key=' + self._token
             return requests.get(
-                ur, params=kwargs, timeout=DEFAULT_TIMEOUT).content
+                ur, params=code, timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
@@ -140,7 +166,13 @@ class IikoServer:
         """Список складов.
 
 
-        :param code: Код торгового предприятия. Значение элемента <code> из структуры corporateItemDto.Регулярное выражение. Если задать просто строку, то ищет любое вхождение этой строки в код ТП с учетом регистра
+        :param code: Код склада - регулярное выражение. Если задать просто строку, то ищет любое вхождение \
+                        этой строки в код склада с учетом регистра.
+        :type code: [storeCode]
+
+        :returns: corporateItemDto, если существует склад с данным кодом. Поиск склада по коду. Для работы этого \
+                    метода  необходимо, чтобы коды складов в ТП были заполнены (данное поле является необязательным \
+                    и по умолчанию пусто
         """
         try:
             ur = self.address + 'api/corporation/stores/search?key=' + self._token
@@ -153,8 +185,10 @@ class IikoServer:
         """Поиск групп отделений.
 
 
-        :param name: Название группы (regex значение).
-        :param departmentId: ID подразделения (uuid)
+        :param name: Название группы.
+        :type name: regex
+        :param departmentId: ID подразделения
+        :type departmentId: string
         """
         try:
             urls = self.address + 'api/corporation/terminal/search?key=' + self._token
@@ -414,8 +448,12 @@ class IikoServer:
         except Exception as e:
             print(e)
 
-    def store_operation(self, stores=None, documentTypes=None, productDetalization=True, showCostCorrections=True,
-                         presetId=None):
+    def store_operation(self,
+                        stores=None,
+                        documentTypes=None,
+                        productDetalization=True,
+                        showCostCorrections=True,
+                        presetId=None):
         """Отчет по складским операциям
 
         :param dateFrom: (DD.MM.YYYY) Начальная дата.
@@ -432,8 +470,12 @@ class IikoServer:
         try:
             urls = self.address + '/resto/api/reports/storeOperations?key=' + self._token
             return requests.get(
-                urls, params={stores, documentTypes, productDetalization,
-                              showCostCorrections, presetId}, timeout=DEFAULT_TIMEOUT).content
+                urls,
+                params={
+                    stores, documentTypes, productDetalization,
+                    showCostCorrections, presetId
+                },
+                timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
@@ -465,7 +507,8 @@ class IikoServer:
         try:
             urls = self.address + '/resto/api/reports/productExpense?key=' + self._token
             return requests.get(
-                urls, params={departament,  kwargs}, timeout=DEFAULT_TIMEOUT).content
+                urls, params={departament, kwargs},
+                timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
@@ -488,7 +531,9 @@ class IikoServer:
             urls = self.address + '/resto/api/reports/sales?key=' + self._token + \
                    '&department=' + departament
             return requests.get(
-                urls, params={dishDetails, allRevenue, kwargs}, timeout=DEFAULT_TIMEOUT).content
+                urls,
+                params={dishDetails, allRevenue, kwargs},
+                timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
@@ -513,7 +558,7 @@ class IikoServer:
         except Exception as e:
             print(e)
 
-    def ingredient_entry(self, departament, includeSubtree = False, **kwargs):
+    def ingredient_entry(self, departament, includeSubtree=False, **kwargs):
         """Отчет о вхождении товара в блюдо
 
         :param department: (GUID) Подразделение
@@ -527,12 +572,18 @@ class IikoServer:
         try:
             urls = self.address + '/resto/api/reports/ingredientEntry?key=' + self._token
             return requests.get(
-                urls, params={departament, includeSubtree, kwargs}, timeout=DEFAULT_TIMEOUT).content
+                urls,
+                params={departament, includeSubtree, kwargs},
+                timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def olap2(self, reportType, groupingAllowed=False, filteringAllowed=False, json=None):
+    def olap2(self,
+              reportType,
+              groupingAllowed=False,
+              filteringAllowed=False,
+              json=None):
         """Поля OLAP-отчета
 
         :param reportType: (Тип отчета)
@@ -592,12 +643,19 @@ class IikoServer:
         try:
             urls = self.address + '/resto/api/v2/reports/olap/columns?key=' + self._token
             return requests.get(
-                urls, params={reportType, groupingAllowed, filteringAllowed}, json=json, timeout=DEFAULT_TIMEOUT).json()
+                urls,
+                params={reportType, groupingAllowed, filteringAllowed},
+                json=json,
+                timeout=DEFAULT_TIMEOUT).json()
 
         except Exception as e:
             print(e)
 
-    def reports_balance(self, timestamp, account=None, counteragent=None, department=None):
+    def reports_balance(self,
+                        timestamp,
+                        account=None,
+                        counteragent=None,
+                        department=None):
         """
         Балансы по счетам, контрагентам и подразделениям
 
@@ -608,18 +666,34 @@ class IikoServer:
         :param counteragent: (optional) id контрагента для фильтрации (необязательный, можно указать несколько).
         :department: (optional) id подразделения для фильтрации (необязательный, можно указать несколько).
         
+        :return: Возвращает количественные (amount) и денежные (sum) остатки товаров (product) на складах (store) на заданную учетную дату-время.
+        См. ниже пример результата.
+
         """
         try:
             urls = self.address + '/resto/reports/balance/counteragents?key=' + self._token
             return requests.get(
-                urls, params={timestamp, account, counteragent, department}, timeout=DEFAULT_TIMEOUT).json()
+                urls,
+                params={timestamp, account, counteragent, department},
+                timeout=DEFAULT_TIMEOUT).json()
 
         except Exception as e:
             print(e)
+
     "----------------------------------Накладные----------------------------------"
 
     def invoice_in(self, **kwargs):
-        """Выгрузка приходных накладных"""
+        """Выгрузка приходных накладных
+
+        :param from: начальная дата (входит в интервал).
+        :type from: YYYY-MM-DD
+        :param to: конечная  дата (входит в интервал, время не учитывается).
+        :type to: YYYY-MM-DD
+        :param supplierId: Id поставщика.
+        :type supplierId: GUID
+
+        :result: XSD Приходная накладная
+        """
         try:
             urls = self.address + '/resto/api/documents/export/incomingInvoice?key=' + self._token
             return requests.get(
@@ -629,7 +703,19 @@ class IikoServer:
             print(e)
 
     def invoice_out(self, **kwargs):
-        """Выгрузка расходных накладных"""
+        """Выгрузка расходных накладных
+
+        :param from: начальная дата (входит в интервал).
+        :type from: YYYY-MM-DD
+        :param to: конечная  дата (входит в интервал, время не учитывается).
+        :type to: YYYY-MM-DD
+        :param supplierId: Id поставщика.
+        :type supplierId: (optional) GUID
+
+        При запросе без постащиков возвращает все расходные накладные, попавшие в интервал.
+
+        :result: XSD Приходная накладная
+        """
         try:
             urls = self.address + '/resto/api/documents/export/outgoingInvoice?key=' + self._token
             return requests.get(
@@ -639,7 +725,24 @@ class IikoServer:
             print(e)
 
     def invoice_number_in(self, current_year=True, **kwargs):
-        """Выгрузка приходной накладной по ее номеру"""
+        """Выгрузка приходной накладной по ее номеру
+
+        :param number: номер документа.
+        :type number: string
+        :param from: (optional) начальная дата (входит в интервал).
+        :type from: YYYY-MM-DD
+        :param to: (optional) конечная  дата (входит в интервал, время не учитывается).
+        :type to: YYYY-MM-DD
+        :param currentYear: только за текущий год (по умолчанию True).
+        :type supplierId: Boolean
+
+        .. note::
+            При currentYear = true, вернет документы с указанным номером документа только за текущий год. Параметры from и to должны отсутствовать.
+
+            При currentYear = false параметры from и to должны быть указаны.
+
+
+        """
 
         try:
             urls = self.address + '/resto/api/documents/export/incomingInvoice/byNumber?key=' \
@@ -654,7 +757,21 @@ class IikoServer:
         """Выгрузка расходной накладной по ее номеру.
 
 
-        :param current_year: Включать ли текущий год, по умолчанию ``True``."""
+        :param number: номер документа.
+        :type number: string
+        :param from: (optional) начальная дата (входит в интервал).
+        :type from: YYYY-MM-DD
+        :param to: (optional) конечная  дата (входит в интервал, время не учитывается).
+        :type to: YYYY-MM-DD
+        :param currentYear: только за текущий год (по умолчанию True).
+        :type supplierId: Boolean
+
+        .. note::
+            При currentYear = true, вернет документы с указанным номером документа только за текущий год. Параметры from и to должны отсутствовать.
+
+            При currentYear = false параметры from и to должны быть указаны.
+        """
+
         try:
             urls = self.address + '/resto/api/documents/export/outgoingInvoice/byNumber?key=' \
                    + self._token + '&currentYear' + current_year
@@ -664,10 +781,10 @@ class IikoServer:
         except Exception as e:
             print(e)
 
-    def production_doc(self, token, xml):
+    def production_doc(self, xml):
         """Загрузка акта приготовления"""
         try:
-            target_url = self.address + '/api/documents/import/productionDocument?key' + token
+            target_url = self.address + '/api/documents/import/productionDocument?key' + self._token
             headers = {'Content-type': 'text/xml'}
             return requests.post(
                 target_url, body=xml, headers=headers,
@@ -678,31 +795,70 @@ class IikoServer:
 
     "----------------------------------Получение данных по кассовым сменам:----------------------------------"
 
-    def close_session(self, **kwargs):
-        """Список кассовых смен"""
+    def close_session(self, dateFrom=None, dateTo=None):
+        """Список кассовых смен
+
+        :param dateFrom: (DD.MM.YYYY) Начальная дата.
+        :param dateTo: (DD.MM.YYYY) Конечная дата.
+
+        :returns: Список всех кассовых смен в заданном интервале. В формате CloseSessionDto.
+
+        """
         try:
             urls = self.address + 'resto/api/closeSession/list?key=' \
                    + self._token
             return requests.get(
-                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
+                urls, params={dateFrom, dateTo},
+                timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
-    def session(self, start=None, end=None):
-        """Информация о кассовых сменах"""
+    def session(self, from_time=None, to_time=None):
+        """Информация о кассовых сменах
+
+        :param from_time: Время с которого запрашиваются данные по кассовым сменам, в формате ISO.
+        :type from: yyyy-MM-ddTHH:mm:ss.SSS
+        :param to_time:  Время по которое (не включительно) запрашиваются данные по кассовым сменам в формате ISO.
+        :type to: yyyy-MM-ddTHH:mm:ss.SSS
+
+        :returns: Информация о кассовых сменах
+
+        """
         try:
             urls = self.address + '/resto/api/events/sessions?key=' \
-                   + self._token + '&from_time=' + start + '&to_time=' + end
-            return requests.get(urls, timeout=DEFAULT_TIMEOUT).content
+                   + self._token
+            return requests.get(
+                urls, params={from_time, to_time},
+                timeout=DEFAULT_TIMEOUT).content
 
         except Exception as e:
             print(e)
 
     "----------------------------------EDI----------------------------------"
 
-    def edi(self, edi, gln, inn='', kpp='', name=''):
-        """Список заказов для участника EDI senderId и поставщика seller"""
+    def edi(self, edi, gln=None, inn=None, kpp=None, name=None):
+        """Список заказов для участника EDI senderId и поставщика seller
+
+        :param ediSystem: Идентификатор участника EDI, подключенной к нашему REST API. Каждый участник EDI должен \
+            получить свой собственный GUID ключ - идентификатор системы EDI (EdiSystem) для подключения к REST API электронного документооборота iiko. См. "Обмен данными/Системы EDI" в iikoOffce..
+        :type ediSystem: GUID
+        :param gln: (optional) GLN поставщика . Может отсутствовать, но тогда параметр inn должен быть заполнен.
+        :type gln: String
+        :param inn: (optional) ИНН (идентификационный номер налогоплательщика). Может отсутствовать, но тогда параметр gln должен быть заполнен.
+        :type inn: String
+        :param kpp: (optional) КПП (код причины постановки).
+        :type kpp: String
+        :param name: (optional) Имя поставщика
+        :type name: String
+
+
+        :returns: Высылает список заказов EDI для зарегистрированного в системе iiko участника ediSystem и указанного поставщика. \
+                    В списке присутствуют также те отмененные на стороне iiko заказы, получение которых участник подтвердил ранее. \
+                    Получение как отправленных, так и отмененных заказов требуется подтверждать, см. метод edi/{ediSystem}/orders/ack
+
+        """
+
         try:
             urls = self.address + 'edi/' + edi + '/orders/bySeller'
             payload = {'gln': gln, 'inn': inn, 'kpp': kpp, 'name': name}
