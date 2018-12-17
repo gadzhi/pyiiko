@@ -72,6 +72,18 @@ class IikoServer:
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу")
 
+    def server_info(self):
+        """Вовращает json файл с информацией о сервере и статусе лицензии
+
+                :returns: Информация в формате json
+                """
+        try:
+            return requests.get(
+                self.address + '/get_server_info.jsp?encoding=UTF-8').json
+
+        except requests.exceptions.ConnectTimeout:
+            print("Не удалось подключиться к серверу")
+
     "----------------------------------Корпорации----------------------------------"
 
     def departments(self):
@@ -108,7 +120,7 @@ class IikoServer:
         """
         try:
             ur = self.address + 'api/corporation/stores?key=' + self._token
-            return requests.get(ur, timeout=DEFAULT_TIMEOUT).content
+            return requests.get(ur, timeout=DEFAULT_TIMEOUT).text
         except Exception as e:
             print(e)
 
@@ -123,7 +135,7 @@ class IikoServer:
         """
         try:
             ur = self.address + 'api/corporation/groups?key=' + self._token
-            return requests.get(ur, timeout=DEFAULT_TIMEOUT).content
+            return requests.get(ur, timeout=DEFAULT_TIMEOUT)
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу")
@@ -176,7 +188,7 @@ class IikoServer:
         """
         try:
             ur = self.address + 'api/corporation/stores/search?key=' + self._token
-            return requests.get(ur, params=code).content
+            return requests.get(ur, params=code)
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу")
