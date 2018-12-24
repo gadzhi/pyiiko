@@ -28,10 +28,10 @@ pylint==1.8.3
 pyparsing==2.2.0
 pytest==3.4.2
 pytz==2018.3
-requests==2.18.4
+requests>=2.20.0
 six==1.11.0
 snowballstemmer==1.2.1
-urllib3==1.22
+urllib3>=1.23
 wrapt==1.10.11
 yapf==0.21.0
 yarg==0.1.9

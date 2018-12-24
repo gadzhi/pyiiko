@@ -64,7 +64,7 @@ class IikoServer:
         """
         try:
             ver = requests.get(
-                self.address + '/get_server_info.jsp?encoding=UTF-8').text
+                self.address + 'get_server_info.jsp?encoding=UTF-8').text
             tree = etree.parse(StringIO(ver))
             version = ''.join(tree.xpath(r'//version/text()'))
             return version
@@ -75,11 +75,11 @@ class IikoServer:
     def server_info(self):
         """Вовращает json файл с информацией о сервере и статусе лицензии
 
-                :returns: Информация в формате json
+                :returns: Информация о сервере в формате json
                 """
         try:
             return requests.get(
-                self.address + '/get_server_info.jsp?encoding=UTF-8').json
+                self.address + 'get_server_info.jsp?encoding=UTF-8').json
 
         except requests.exceptions.ConnectTimeout:
             print("Не удалось подключиться к серверу")

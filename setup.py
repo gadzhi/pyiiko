@@ -10,11 +10,12 @@ setup(
     author_email='gadzhibala@protonmail.com',
     version=Pyiiko.__version__,
     packages=find_packages(),
-    long_description=open(join(dirname(__file__), 'README.rst')).read(),
     include_package_data=True,
     test_suite='tests',
     install_requires=[
-        'requests>=2.18.4',
-        'pytest>= 3.4.2'
+        'requests>=2.20.0',
+        'pytest>= 3.4.2',
+        'lxml>=4.1.1'
+
     ]
 )
