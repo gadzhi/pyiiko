@@ -453,7 +453,7 @@ class IikoServer:
 
         """
         try:
-            urls = self.address + '/resto/api/reports/'+ report + '?key=' + self._token
+            urls = self.address + 'api/reports/' + report + '?key=' + self._token
             return requests.get(
                 urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
