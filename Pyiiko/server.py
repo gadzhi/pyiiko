@@ -416,7 +416,7 @@ class IikoServer:
 
     "----------------------------------Отчеты----------------------------------"
 
-    def olap(self, report=None, **kwargs):
+    def olap(self, report=None, data_from=None, data_to=None, **kwargs):
         """OLAP-отчет
 
         :param report: (Тип отчета)
@@ -453,7 +453,7 @@ class IikoServer:
 
         """
         try:
-            urls = self.address + 'api/reports/' + report + '?key=' + self._token
+            urls = self.address + 'api/reports/' + report + '?key=' + self._token + '&from=' + data_from + '&to' + data_to
             return requests.get(
                 urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
 
