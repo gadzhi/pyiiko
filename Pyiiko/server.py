@@ -16,7 +16,7 @@ class IikoServer:
     def __init__(self, ip=None, login=None, password=None, token=None):
 
         self.login = login
-        self.password = hashlib.sha1(password.encode('utf-8')).hexdigest()
+        self.password = password
         self.address = 'http://' + ip + '/resto/'
         self._token = (token or self.get_token())
 
