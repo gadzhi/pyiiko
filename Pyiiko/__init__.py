@@ -1,6 +1,6 @@
-from Pyiiko.server import *
-from Pyiiko.biz import *
-from Pyiiko.card5 import *
-from Pyiiko.frontWeb import *
+from .server import IikoServer
+from .biz import IikoBiz
+from .card5 import Card5
+from .frontWeb import FrontWebAPI
 
 

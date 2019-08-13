@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 from os.path import join, dirname
-import Pyiiko
+
 
 setup(
     name='Pyiiko',
@@ -8,7 +8,7 @@ setup(
     url='https://github.com/gadzhi/pyiiko',
     author='Gadzhibala Pirmagomedov',
     author_email='gadzhibala@protonmail.com',
-    version='0.2.7',
+    version='0.2.8',
     packages=find_packages(),
     include_package_data=True,
     test_suite='tests',
