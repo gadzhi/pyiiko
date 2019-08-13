@@ -453,9 +453,9 @@ class IikoServer:
 
         """
         try:
-            urls = self.address + 'api/reports/' + report + '?key=' + self._token + '&from=' + data_from + '&to' + data_to
+            urls = self.address + 'api/reports/olap?report=' + report + '&key=' + self._token + '&from=' + data_from + '&to=' + data_to
             return requests.get(
-                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
+                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).text
 
         except Exception as e:
             print(e)
