@@ -14,7 +14,6 @@ setup(
     test_suite='tests',
     install_requires=[
         'requests>=2.20.0',
-        'pytest>= 3.4.2',
         'lxml>=4.1.1'
 
     ]
