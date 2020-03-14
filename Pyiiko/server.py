@@ -13,11 +13,12 @@ class IikoServer:
 
     """
 
-    def __init__(self, ip=None, login=None, password=None, token=None):
+    def __init__(self, ip=None, login=None, password=None, token=None, protocol=None):
 
         self.login = login
         self.password = password
-        self.address = 'http://' + ip + '/resto/'
+        self.protocol = protocol
+        self.address = self.protocol + ip + '/resto/'
         self._token = (token or self.get_token())
 
     def token(self):
