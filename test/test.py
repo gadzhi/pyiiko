@@ -1,6 +1,10 @@
-from itertools import groupby
-def test(a):
-	return[it for it , _ in groupby(a, lambda x: x[0])]
+num = int(input())
+my_list = []
+sort_list = []
+last_list = []
+for i in range(num):
+    x = input().strip()
+    word = x.lower()
+    my_list.append(word)
 
-tes = [1,1,2,2,4,4,1,1]
-print(test(tes))
+

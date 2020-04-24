@@ -9,6 +9,7 @@ test/213.py
 test/test2.py
 *$py.class
 *.db
+settings.json
 
 # C extensionsls
 *.so
@@ -17,7 +18,7 @@ test/test2.py
 # Distribution / packaging
 .Python
 build/
-test/settings.py
+Pyiiko/settings.py
 bin/
 develop-eggs/
 dist/
