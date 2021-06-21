@@ -652,7 +652,7 @@ class IikoServer:
 
         """
         try:
-            urls = self.address + '/resto/api/v2/reports/olap?key=' + self._token
+            urls = self.address + 'resto/api/v2/reports/olap?key=' + self._token
             return requests.get(
                 urls,
                 params={groupingAllowed, filteringAllowed},
