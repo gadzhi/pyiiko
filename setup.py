@@ -8,7 +8,7 @@ setup(
     url='https://github.com/gadzhi/pyiiko',
     author='Gadzhibala Pirmagomedov',
     author_email='gadzhibala@protonmail.com',
-    version='0.2.10',
+    version='0.2.11',
     packages=find_packages(),
     include_package_data=True,
     test_suite='tests',

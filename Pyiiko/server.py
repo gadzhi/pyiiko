@@ -592,6 +592,8 @@ class IikoServer:
             print(e)
 
     def olap2(self,
+              datafrom,
+              datato,
               groupingAllowed=False,
               filteringAllowed=False,
               json=None):
