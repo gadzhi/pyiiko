@@ -592,7 +592,6 @@ class IikoServer:
             print(e)
 
     def olap2(self,
-              reportType,
               groupingAllowed=False,
               filteringAllowed=False,
               json=None):
@@ -653,10 +652,10 @@ class IikoServer:
 
         """
         try:
-            urls = self.address + '/resto/api/v2/reports/olap/columns?key=' + self._token
+            urls = self.address + '/resto/api/v2/reports/olap?key=' + self._token
             return requests.get(
                 urls,
-                params={reportType, groupingAllowed, filteringAllowed},
+                params={groupingAllowed, filteringAllowed},
                 json=json,
                 timeout=DEFAULT_TIMEOUT).json()
 
