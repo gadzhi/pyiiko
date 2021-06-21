@@ -592,11 +592,9 @@ class IikoServer:
             print(e)
 
     def olap2(self,
-              datafrom,
-              datato,
+              body,
               groupingAllowed=False,
-              filteringAllowed=False,
-              json=None):
+              filteringAllowed=False):
         """Поля OLAP-отчета
 
         :param reportType: (Тип отчета)
@@ -658,7 +656,7 @@ class IikoServer:
             return requests.get(
                 urls,
                 params={groupingAllowed, filteringAllowed},
-                json=json,
+                json=body,
                 timeout=DEFAULT_TIMEOUT).json()
 
         except Exception as e:
