@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import requests
-import hashlib
 from lxml import etree
 from io import StringIO
 
@@ -592,9 +591,7 @@ class IikoServer:
             print(e)
 
     def olap2(self,
-              body,
-              groupingAllowed=False,
-              filteringAllowed=False):
+              body):
         """Поля OLAP-отчета
 
         :param reportType: (Тип отчета)
@@ -653,11 +650,10 @@ class IikoServer:
         """
         try:
             urls = self.address + 'api/v2/reports/olap?key=' + self._token
-            return requests.get(
+            return requests.post(
                 urls,
-                params={groupingAllowed, filteringAllowed},
                 json=body,
-                timeout=DEFAULT_TIMEOUT).json()
+                timeout=DEFAULT_TIMEOUT)
 
         except Exception as e:
             print(e)
@@ -878,3 +874,49 @@ class IikoServer:
 
         except Exception as e:
             print(e)
+
+body = {
+   "reportType":"SALES",
+   "buildSummary":"true",
+   "groupByRowFields":[
+    "OpenDate.Typed",
+    "Department",
+    "Department.Code",
+    "Delivery.ServiceType"
+   ],
+   "groupByColFields":[
+
+   ],
+   "aggregateFields":[
+      "DishDiscountSumInt.withoutVAT"
+   ],
+   "filters":{
+      "OpenDate.Typed":{
+         "filterType":"DateRange",
+         "periodType":"CUSTOM",
+         "from":"2021-01-26T00:00:00.000",
+         "to":"2021-01-27T00:00:00.000"
+      },
+      "DeletedWithWriteoff":{
+         "filterType":"IncludeValues",
+         "values":[
+            "NOT_DELETED"
+         ]
+      },
+      "OrderDeleted":{
+         "filterType":"IncludeValues",
+         "values":[
+            "NOT_DELETED"
+         ]
+      }
+      ,
+      "Delivery.ServiceType":{
+         "filterType":"ExcludeValues",
+         "values":[
+            "COURIER",
+            "PICKUP"
+         ]
+      }
+   }
+}
+
