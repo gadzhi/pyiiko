@@ -90,7 +90,8 @@ class IikoServer(BaseIikoClient):
             "get_server_info.jsp", params={"encoding": "UTF-8"}
         ).text
         tree = etree.parse(StringIO(text))
-        return "".join(tree.xpath(r"//version/text()"))
+        nodes: list[Any] = tree.xpath(r"//version/text()")  # type: ignore[assignment]
+        return "".join(str(x) for x in nodes)
 
     def server_info(self) -> Any:
         """Return server info and license status as a parsed JSON dict."""
