@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from ._base import BaseIikoClient, DEFAULT_TIMEOUT
+from ._base import DEFAULT_TIMEOUT, BaseIikoClient
 from .exceptions import IikoAuthError
 
 logger = logging.getLogger(__name__)

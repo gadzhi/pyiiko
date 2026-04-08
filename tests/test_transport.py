@@ -4,8 +4,8 @@ import json
 import pytest
 import responses
 
-from Pyiiko import Transport, IikoAPIError, IikoAuthError
-from tests.conftest import TRANSPORT_BASE, FAKE_TRANSPORT_TOKEN
+from Pyiiko import IikoAPIError, IikoAuthError, Transport
+from tests.conftest import FAKE_TRANSPORT_TOKEN, TRANSPORT_BASE
 
 ORG_ID = "org-guid-0000-1111"
 CITY_ID = "city-guid-aaaa"
@@ -219,6 +219,44 @@ def test_api_error_on_500(transport):
     with pytest.raises(IikoAPIError) as exc_info:
         transport.organization()
     assert exc_info.value.status_code == 500
+
+
+# ---------------------------------------------------------------------------
+# Regions
+# ---------------------------------------------------------------------------
+
+
+@responses.activate
+def test_regions(transport):
+    responses.add(
+        responses.POST,
+        f"{TRANSPORT_BASE}/api/1/regions",
+        json={"regions": []},
+        status=200,
+    )
+    resp = transport.regions(org_id=ORG_ID)
+    assert resp.status_code == 200
+    body = json.loads(responses.calls[0].request.body)
+    assert body == {"organizationIds": [ORG_ID]}
+
+
+# ---------------------------------------------------------------------------
+# by_delivery_date
+# ---------------------------------------------------------------------------
+
+
+@responses.activate
+def test_by_delivery_date(transport):
+    date_from = "2024-01-01T00:00:00.000"
+    responses.add(
+        responses.POST,
+        f"{TRANSPORT_BASE}/api/1/deliveries/by_delivery_date_and_status",
+        json={},
+        status=200,
+    )
+    transport.by_delivery_date(org_id=ORG_ID, delivery_date_from=date_from)
+    body = json.loads(responses.calls[0].request.body)
+    assert body == {"organizationId": [ORG_ID], "deliveryDateFrom": [date_from]}
 
 
 # ---------------------------------------------------------------------------

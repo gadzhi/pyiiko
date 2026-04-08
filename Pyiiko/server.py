@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """iiko Server API client (on-premise)."""
 from __future__ import annotations
 
@@ -8,7 +7,7 @@ from typing import Any
 
 from lxml import etree
 
-from ._base import BaseIikoClient, DEFAULT_TIMEOUT
+from ._base import DEFAULT_TIMEOUT, BaseIikoClient
 from .exceptions import IikoAuthError
 
 logger = logging.getLogger(__name__)
@@ -93,7 +92,7 @@ class IikoServer(BaseIikoClient):
         tree = etree.parse(StringIO(text))
         return "".join(tree.xpath(r"//version/text()"))
 
-    def server_info(self) -> dict:
+    def server_info(self) -> Any:
         """Return server info and license status as a parsed JSON dict."""
         return self._get(
             "get_server_info.jsp", params={"encoding": "UTF-8"}
@@ -449,7 +448,7 @@ class IikoServer(BaseIikoClient):
             ),
         ).content
 
-    def olap2(self, body: dict) -> dict:
+    def olap2(self, body: dict) -> Any:
         """Return OLAP report data using the v2 JSON API.
 
         :param body: Report request dict.  See API docs for the full schema::
@@ -476,7 +475,7 @@ class IikoServer(BaseIikoClient):
         account: str | None = None,
         counteragent: str | None = None,
         department: str | None = None,
-    ) -> dict:
+    ) -> Any:
         """Return account, counteragent, and department balances.
 
         :param timestamp: Accounting date-time ``yyyy-MM-dd'T'HH:mm:ss``.

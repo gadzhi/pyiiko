@@ -76,7 +76,7 @@ class BaseIikoClient:
         """Close the underlying HTTP session."""
         self._session.close()
 
-    def __enter__(self) -> "BaseIikoClient":
+    def __enter__(self) -> BaseIikoClient:
         return self
 
     def __exit__(self, *args: Any) -> None:

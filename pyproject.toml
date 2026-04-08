@@ -34,6 +34,10 @@ dev = [
     "pytest>=7.4",
     "pytest-cov>=4.1",
     "responses>=0.23.0",
+    "ruff>=0.4.0",
+    "mypy>=1.9",
+    "types-requests>=2.31",
+    "lxml-stubs>=0.5",
 ]
 
 [project.urls]
@@ -61,5 +65,27 @@ source = ["Pyiiko"]
 omit = ["tests/*"]
 
 [tool.coverage.report]
-fail_under = 80
+fail_under = 90
 show_missing = true
+
+[tool.ruff]
+line-length = 99
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = [
+    "B008",   # do not perform function call in default argument
+]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+no_implicit_optional = true
+strict_equality = true
+[[tool.mypy.overrides]]
+module = "lxml.*"
+ignore_missing_imports = true
