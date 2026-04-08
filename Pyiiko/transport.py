@@ -1,145 +1,203 @@
-import requests
-import json
-address = 'https://api-ru.iiko.services/'
-DEFAULT_TIMEOUT = 4
-headers = {'content-type': 'application/json', 'Accept-Charset': 'UTF-8'}
-from Pyiiko.settings import order
+"""iiko Transport (Cloud) API client."""
+from __future__ import annotations
 
-class Transport:
+import logging
+from typing import Any
 
-    def __init__(self, key=None, token=None):
+from ._base import BaseIikoClient, DEFAULT_TIMEOUT
+from .exceptions import IikoAuthError
 
+logger = logging.getLogger(__name__)
+
+_API_BASE = "https://api-ru.iiko.services"
+
+
+class Transport(BaseIikoClient):
+    """Client for the iiko Transport Cloud API.
+
+    Authenticates with an API login key and stores a Bearer token for
+    subsequent requests::
+
+        client = Transport(key="your-api-login-key")
+        orgs = client.organization()
+
+    Pass a pre-fetched *token* dict to skip the auth round-trip::
+
+        client = Transport(token={"token": "...", ...})
+    """
+
+    def __init__(
+        self,
+        key: str | None = None,
+        token: dict | None = None,
+        timeout: int = DEFAULT_TIMEOUT,
+    ) -> None:
+        super().__init__(_API_BASE, timeout)
         self.key = key
-        self._token = (token or self.get_token())
+        self._token: dict = token if token is not None else self.get_token()
 
-    def token(self):
-        return self._token()
+    # ------------------------------------------------------------------
+    # Auth
+    # ------------------------------------------------------------------
 
-    def get_token(self):
-        try:
-            url = address + 'api/1/access_token'
-            payload = '{"apiLogin":"' + self.key + '"}'
-            return requests.post(url=url, data=payload, headers=headers, timeout=DEFAULT_TIMEOUT).json()
+    def get_token(self) -> dict:
+        """Fetch a new Bearer token using the API login key.
 
-        except Exception as e:
-            print(e)
+        :returns: Token response dict, e.g. ``{"token": "...", "correlationId": "..."}``.
+        :raises IikoAuthError: If the server returns an empty token.
+        """
+        response = self._post(
+            "api/1/access_token",
+            json={"apiLogin": self.key},
+            headers={"content-type": "application/json", "Accept-Charset": "UTF-8"},
+        )
+        data: dict = response.json()
+        if not data.get("token"):
+            raise IikoAuthError("Transport API returned an empty token")
+        return data
 
-    def organization(self):
-        try:
-            auth = self._token['token']
-            url = address + 'api/1/organizations'
-            hed = {'Authorization': 'Bearer ' + auth}
+    def token(self) -> dict:
+        """Return the current token response dict."""
+        return self._token
 
-            return requests.get(url=url, headers=hed, timeout=DEFAULT_TIMEOUT)
+    def _auth(self) -> dict[str, str]:
+        """Return Authorization header for the current token."""
+        return {"Authorization": f"Bearer {self._token['token']}"}
 
-        except Exception as e:
-            print(e)
+    # ------------------------------------------------------------------
+    # Organizations & infrastructure
+    # ------------------------------------------------------------------
 
-    def terminal(self, org_id, include= "false"):
-        try:
-            auth = self._token['token']
-            url = address + 'api/1/terminal_groups'
-            hed = {'Authorization': 'Bearer ' + auth}
-            payload = json.loads('{"organizationIds": ["' + org_id + '"]}')
+    def organization(self) -> Any:
+        """Return the list of organizations accessible with the current key."""
+        return self._get("api/1/organizations", headers=self._auth())
 
-            return requests.post(url=url, json=payload, headers=hed, timeout=DEFAULT_TIMEOUT)
+    def terminal(self, org_id: str, include: str = "false") -> Any:
+        """Return terminal groups for an organization.
 
-        except Exception as e:
-            print(e)
+        :param org_id: Organization GUID.
+        :param include: Whether to include disabled groups (default ``"false"``).
+        """
+        return self._post(
+            "api/1/terminal_groups",
+            json={"organizationIds": [org_id]},
+            headers=self._auth(),
+        )
 
-    def regions(self, org_id):
-        try:
-            auth = self._token['token']
-            url = address + 'api/1/regions'
-            hed = {'Authorization': 'Bearer ' + auth}
-            payload = json.loads('{"organizationIds": ["' + org_id + '"]}')
+    def regions(self, org_id: str) -> Any:
+        """Return delivery regions for an organization.
 
-            return requests.post(url=url, json=payload, headers=hed, timeout=DEFAULT_TIMEOUT)
+        :param org_id: Organization GUID.
+        """
+        return self._post(
+            "api/1/regions",
+            json={"organizationIds": [org_id]},
+            headers=self._auth(),
+        )
 
-        except Exception as e:
-            print(e)
+    def cities(self, org_id: str | None = None) -> Any:
+        """Return cities for an organization.
 
-    def cities(self, org_id=None):
-        try:
-            auth = self._token['token']
-            url = address + 'api/1/cities'
-            hed = {'Authorization': 'Bearer ' + auth}
-            payload = json.loads('{"organizationIds": ["' + org_id + '"]}')
+        :param org_id: Organization GUID.
+        """
+        return self._post(
+            "api/1/cities",
+            json={"organizationIds": [org_id]},
+            headers=self._auth(),
+        )
 
-            return requests.post(url=url, json=payload, headers=hed, timeout=DEFAULT_TIMEOUT)
+    def streets_by_city(self, org_id: str, city: str) -> Any:
+        """Return streets for a city within an organization.
 
-        except Exception as e:
-            print(e)
+        :param org_id: Organization GUID.
+        :param city: City GUID.
+        """
+        return self._post(
+            "api/1/streets/by_city",
+            json={"organizationId": org_id, "cityId": city},
+            headers=self._auth(),
+        )
 
-    def streets_by_city(self, org_id, city):
-        try:
-            auth = self._token['token']
-            url = address + 'api/1/streets/by_city'
-            hed = {'Authorization': 'Bearer ' + auth}
-            payload = json.loads('{"organizationId": "' + org_id + '","cityId": "' + city + '"}')
+    # ------------------------------------------------------------------
+    # Deliveries
+    # ------------------------------------------------------------------
 
-            return requests.post(url=url, json=payload, headers=hed, timeout=DEFAULT_TIMEOUT)
+    def delivery_create(self, order_info: dict) -> Any:
+        """Create a delivery order.
 
-        except Exception as e:
-            print(e)
+        :param order_info: Delivery order payload dict.
+        """
+        return self._post(
+            "api/1/deliveries/create",
+            json=order_info,
+            headers=self._auth(),
+        )
 
-    def delivery_create(self, order_info):
-        try:
-            auth = self._token['token']
-            url = address + 'api/1/deliveries/create'
-            hed = {'Authorization': 'Bearer ' + auth}
-            payload = order_info
+    def check_create(self, order_info: dict | str) -> Any:
+        """Validate a delivery order before creation.
 
-            return requests.post(url=url, json=payload, headers=hed, timeout=DEFAULT_TIMEOUT)
+        :param order_info: Order payload as dict or JSON string.
+        """
+        import json
 
-        except Exception as e:
-            print(e)
+        payload = (
+            order_info
+            if isinstance(order_info, dict)
+            else json.loads(order_info)
+        )
+        return self._post(
+            "api/1/deliveries/check_create",
+            json=payload,
+            headers=self._auth(),
+        )
 
-    def check_create(self, order_info):
-        try:
-            auth = self._token['token']
-            url = address + 'api/1/deliveries/check_create'
-            hed = {'Authorization': 'Bearer ' + auth}
-            payload = json.loads(order_info)
+    def by_id(
+        self,
+        org_id: str | None = None,
+        order_id: str | None = None,
+    ) -> Any:
+        """Return a delivery order by ID.
 
-            return requests.post(url=url, json=payload, headers=hed, timeout=DEFAULT_TIMEOUT)
+        :param org_id: Organization GUID.
+        :param order_id: Order GUID.
+        """
+        return self._post(
+            "api/1/deliveries/by_id",
+            json={"organizationId": org_id, "orderIds": [order_id]},
+            headers=self._auth(),
+        )
 
-        except Exception as e:
-            print(e)
+    def by_delivery_date(
+        self,
+        org_id: str | None = None,
+        delivery_date_from: str | None = None,
+    ) -> Any:
+        """Return deliveries filtered by date and status.
 
-    def by_id(self, org_id=None, order_id=None):
-        try:
-            auth = self._token['token']
-            url = address + 'api/1/deliveries/by_id'
-            hed = {'Authorization': 'Bearer ' + auth}
-            payload = json.loads('{"organizationId": "' + org_id + '","orderIds": ["' + order_id + '"]}')
+        :param org_id: Organization GUID.
+        :param delivery_date_from: Start date-time ISO.
+        """
+        return self._post(
+            "api/1/deliveries/by_delivery_date_and_status",
+            json={
+                "organizationId": [org_id],
+                "deliveryDateFrom": [delivery_date_from],
+            },
+            headers=self._auth(),
+        )
 
-            return requests.post(url=url, json=payload, headers=hed, timeout=DEFAULT_TIMEOUT)
+    def by_revision(
+        self,
+        org_id: str | None = None,
+        revision: str | None = None,
+    ) -> Any:
+        """Return deliveries starting from a revision number.
 
-        except Exception as e:
-            print(e)
-
-    def by_delivery_date(self, org_id=None, order_id=None):
-        try:
-            auth = self._token['token']
-            url = address + 'api/1/deliveries/by_delivery_date_and_status'
-            hed = {'Authorization': 'Bearer ' + auth}
-            payload = json.loads('{"organizationId": ["' + org_id + '"],"deliveryDateFrom": ["' + order_id + '"]}')
-
-            return requests.post(url=url, json=payload, headers=hed, timeout=DEFAULT_TIMEOUT)
-
-        except Exception as e:
-            print(e)
-
-
-    def by_revision(self, org_id=None, revision=None):
-        try:
-            auth = self._token['token']
-            url = address + 'api/1/deliveries/by_revision'
-            hed = {'Authorization': 'Bearer ' + auth}
-            payload = json.loads('{"startRevision": "' + revision + '","organizationIds": ["' + org_id + '"]}')
-
-            return requests.post(url=url, json=payload, headers=hed, timeout=DEFAULT_TIMEOUT)
-
-        except Exception as e:
-            print(e)
+        :param org_id: Organization GUID.
+        :param revision: Start revision (string).
+        """
+        return self._post(
+            "api/1/deliveries/by_revision",
+            json={"startRevision": revision, "organizationIds": [org_id]},
+            headers=self._auth(),
+        )

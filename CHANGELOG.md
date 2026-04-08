@@ -1,0 +1,63 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.3.0] - 2026-04-08
+
+### Breaking changes
+- Methods now raise `IikoAPIError` (or `IikoAuthError`) on failure instead of
+  silently returning `None`. Update any code that checks `if result is None`.
+- `Transport.by_delivery_date` parameter renamed from `order_id` to
+  `delivery_date_from` to match its actual meaning.
+- `FrontWebAPI` module removed.
+- `IikoBiz` module removed.
+- `Card5` module removed.
+
+### Added
+- `IikoError`, `IikoAuthError`, `IikoAPIError` — structured exception hierarchy
+  exported from the top-level package.
+- `BaseIikoClient` — shared HTTP session with automatic retry on 5xx errors
+  (3 retries, exponential back-off).
+- Context manager support for `IikoServer` and `Transport`:
+  `with IikoServer(...) as server: ...`.
+- `timeout` parameter on `IikoServer.__init__` and `Transport.__init__`.
+- PEP 561 `py.typed` marker — the library now ships type information.
+- `pyproject.toml` replacing the legacy `setup.py`.
+- Unit test suite in `tests/` using `pytest` + `responses` (no live API required).
+- GitHub Actions CI workflow (Python 3.9–3.12).
+
+### Fixed
+- `server_info()` was returning a method object instead of parsed JSON (`.json`
+  vs `.json()`).
+- `terminals_search(anonymous=True)` raised `TypeError` — boolean was
+  concatenated to a URL string.
+- `invoice_number_in/out(current_year=False)` raised `TypeError` — same issue.
+- `production_doc` used the wrong kwarg `body=` instead of `data=` and had a
+  missing `=` before the token in the URL.
+- `store_operation`, `product_expense`, `sales`, `ingredient_entry`,
+  `reports_balance`, `close_session`, `session` all used Python set literals
+  `{a, b, c}` as `params=`, which requests cannot serialise. Converted to
+  proper dicts.
+- `olap()` still constructed the URL via string concatenation — moved to
+  `params=`.
+- `Transport.get_token()` constructed JSON via string concatenation instead of
+  a proper dict.
+- `Transport.token()` called `self._token()` (treating the token dict as a
+  callable).
+- `Transport` imported `order` from a non-existent `Pyiiko.settings` module.
+- All `json.loads('{"key":"' + var + '"}')` patterns replaced with native dicts.
+- All `print(e)` calls replaced with `logging.error(...)`.
+- Missing `timeout` on several requests in `IikoServer` and `FrontWebAPI`.
+
+## [0.2.15] - 2019-xx-xx
+
+Initial public release.
+
+[Unreleased]: https://github.com/gadzhi/pyiiko/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/gadzhi/pyiiko/compare/v0.2.15...v0.3.0
+[0.2.15]: https://github.com/gadzhi/pyiiko/releases/tag/v0.2.15

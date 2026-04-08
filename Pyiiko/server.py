@@ -1,282 +1,217 @@
 # -*- coding: utf-8 -*-
-import requests
-from lxml import etree
+"""iiko Server API client (on-premise)."""
+from __future__ import annotations
+
+import logging
 from io import StringIO
+from typing import Any
 
-DEFAULT_TIMEOUT = 4
+from lxml import etree
+
+from ._base import BaseIikoClient, DEFAULT_TIMEOUT
+from .exceptions import IikoAuthError
+
+logger = logging.getLogger(__name__)
 
 
-class IikoServer:
-    """Класс отвечающий за работы с iikoSeverApi
+class IikoServer(BaseIikoClient):
+    """Client for the iiko Server REST API (on-premise installations).
 
+    Authenticates on construction and stores the token for subsequent calls.
+    Pass a pre-existing *token* to skip the auth round-trip::
 
+        server = IikoServer(ip="https://host:443", login="user", password="sha1hash")
+        print(server.version())
+
+    One token occupies one license slot.  Call :meth:`quit_token` when done to
+    free the slot, or use the client as a context manager::
+
+        with IikoServer(...) as server:
+            data = server.departments()
     """
 
-    def __init__(self, ip=None, login=None, password=None, token=None):
-
+    def __init__(
+        self,
+        ip: str | None = None,
+        login: str | None = None,
+        password: str | None = None,
+        token: str | None = None,
+        timeout: int = DEFAULT_TIMEOUT,
+    ) -> None:
+        base_url = (ip or "").rstrip("/") + "/resto/"
+        super().__init__(base_url, timeout)
         self.login = login
         self.password = password
-        self.address = ip + '/resto/'
-        self._token = (token or self.get_token())
+        self._token: str = token or self.get_token()
 
-    def token(self):
+    # ------------------------------------------------------------------
+    # Auth
+    # ------------------------------------------------------------------
+
+    def _key(self, **extra: Any) -> dict[str, Any]:
+        """Return params dict containing the auth key plus any extra params."""
+        params: dict[str, Any] = {"key": self._token}
+        params.update({k: v for k, v in extra.items() if v is not None})
+        return params
+
+    def token(self) -> str:
+        """Return the current authentication token."""
         return self._token
 
-    def get_token(self):
-        """Метод получает новый токен
+    def get_token(self) -> str:
+        """Fetch a new authentication token from the server.
+
         .. note::
 
-            при авторизации вы занимаете один слот лицензии. Token,
-            который вы получаете при авторизации, можно использовать до того момента,
-             пока он не протухнет ( не перестанет работать). И если у вас только одна
-             лицензия сервера, а вы уже получили token, следующее обращение к серверу за
-             token-ом вызовет ошибку. Если вам негде хранить token при работе с сервером API,
-             рекомендуем вам разлогиниться, что приводит к отпусканию лицензии.
-
-            """
-
-        try:
-            url = self.address + 'api/auth?login=' + self.login + "&pass=" + self.password
-            return requests.get(url=url, timeout=DEFAULT_TIMEOUT).text
-
-        except Exception as e:
-            print(e)
-
-    def quit_token(self):
-        """Уничтожение токена
-
+            Each token occupies one license slot.  If you have a single
+            license and a live token, requesting a new one will fail.
+            Call :meth:`quit_token` to release the slot first.
         """
+        response = self._get(
+            "api/auth",
+            params={"login": self.login, "pass": self.password},
+        )
+        token = response.text.strip()
+        if not token:
+            raise IikoAuthError("Server returned an empty token")
+        return token
 
-        try:
-            logout = requests.get(
-                self.address + 'api/logout?key=' + self._token)
-            print("\nТокен уничтожен: " + self._token)
-            return logout
+    def quit_token(self) -> None:
+        """Destroy the current token and release the license slot."""
+        self._get("api/logout", params={"key": self._token})
+        logger.info("Token destroyed: %s", self._token)
 
-        except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу")
+    # ------------------------------------------------------------------
+    # Server info
+    # ------------------------------------------------------------------
 
-    def version(self):
-        """Позволяет узнать версию iiko
+    def version(self) -> str:
+        """Return the iiko server version string."""
+        text = self._get(
+            "get_server_info.jsp", params={"encoding": "UTF-8"}
+        ).text
+        tree = etree.parse(StringIO(text))
+        return "".join(tree.xpath(r"//version/text()"))
 
-        :returns: Версия iiko в формате string
+    def server_info(self) -> dict:
+        """Return server info and license status as a parsed JSON dict."""
+        return self._get(
+            "get_server_info.jsp", params={"encoding": "UTF-8"}
+        ).json()
+
+    # ------------------------------------------------------------------
+    # Корпорации
+    # ------------------------------------------------------------------
+
+    def departments(self) -> bytes:
+        """Return the department hierarchy (corporateItemDto).
+
+        .. csv-table:: Department types
+           :header: "Code", "Name"
+           :widths: 20, 30
+
+           "CORPORATION", Corporation
+           "JURPERSON", Legal entity
+           "ORGDEVELOPMENT", Structural unit
+           "DEPARTMENT", Trading enterprise
+           "MANUFACTURE", Production
+           "CENTRALSTORE", Central warehouse
+           "CENTRALOFFICE", Central office
+           "SALEPOINT", Point of sale
+           "STORE", Warehouse
         """
-        try:
-            ver = requests.get(
-                self.address + 'get_server_info.jsp?encoding=UTF-8').text
-            tree = etree.parse(StringIO(ver))
-            version = ''.join(tree.xpath(r'//version/text()'))
-            return version
+        return self._get("api/corporation/departments", params=self._key()).content
 
-        except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу")
+    def stores(self) -> str:
+        """Return all warehouses as corporateItemDto XML."""
+        return self._get("api/corporation/stores", params=self._key()).text
 
-    def server_info(self):
-        """Вовращает json файл с информацией о сервере и статусе лицензии
+    def groups(self) -> bytes:
+        """Return groups, branches, and points of sale (groupDto)."""
+        return self._get("api/corporation/groups", params=self._key()).content
 
-                :returns: Информация о сервере в формате json
-                """
-        try:
-            return requests.get(
-                self.address + 'get_server_info.jsp?encoding=UTF-8').json
+    def terminals(self) -> bytes:
+        """Return all terminals (terminalDto)."""
+        return self._get("api/corporation/terminals", params=self._key()).content
 
-        except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу")
+    def departments_find(self, code: str) -> bytes:
+        """Search for a department by code (regex).
 
-    "----------------------------------Корпорации----------------------------------"
-
-    def departments(self):
-        """Иерархия подразделений
-
-        .. csv-table:: Типы подразделений
-           :header: "Код", "Наименование"
-           :widths: 15, 20
-
-           "CORPORATION", Корпорация
-           "JURPERSON", Юридическое лицо
-           ORGDEVELOPMENT, Структурное подразделение
-           DEPARTMENT, Торговое предприятие
-           MANUFACTURE, Производство
-           CENTRALSTORE, Центральный склад
-           CENTRALOFFICE, Центральный офис
-           SALEPOINT, Точка продаж
-           STORE, Склад
-
-
+        :param code: Department code regex pattern.
+        :returns: corporateItemDto structure.
         """
-        try:
-            urls = self.address + "api/corporation/departments?key=" + self._token
-            return requests.get(url=urls, timeout=DEFAULT_TIMEOUT).content
-        except Exception as e:
-            print(e)
+        return self._get(
+            "api/corporation/departments/search",
+            params=self._key(departmentCode=code),
+        ).content
 
-    def stores(self):
-        """Список складов
+    def stores_find(self, code: str) -> bytes:
+        """Search for a warehouse by code (regex).
 
-        :returns: Все склады ТП в виде структуры corporateItemDto
-
-
+        :param code: Warehouse code regex pattern.
+        :returns: corporateItemDto structure.
         """
-        try:
-            ur = self.address + 'api/corporation/stores?key=' + self._token
-            return requests.get(ur, timeout=DEFAULT_TIMEOUT).text
-        except Exception as e:
-            print(e)
+        return self._get(
+            "api/corporation/stores/search",
+            params=self._key(storeCode=code),
+        ).content
 
-    def groups(self):
-        """Список групп и отделений
+    def groups_search(self, **kwargs: Any) -> bytes:
+        """Search for branch groups.
 
-        :returns: Все группы отделений, отделения и точки продаж ТП в виде структуры groupDto. \
-                    В группе отделений может быть несколько точек продаж, но главная касса
-                    (свойство groupDto/pointOfSaleDtoes/pointOfSaleDto/main=true) может быть подключена только
-                    к одной из них. В iikoChain информация о кассе точки продаж
-                    (groupDto/pointOfSaleDtoes/pointOfSaleDto/cashRegisterInfo) может отсутствовать.
+        :param name: Group name regex.
+        :param departmentId: Department GUID.
         """
-        try:
-            ur = self.address + 'api/corporation/groups?key=' + self._token
-            return requests.get(ur, timeout=DEFAULT_TIMEOUT)
+        return self._get(
+            "api/corporation/groups/search",
+            params=self._key(**kwargs),
+        ).content
 
-        except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу")
+    def terminals_search(self, anonymous: bool = False, **kwargs: Any) -> bytes:
+        """Search for terminals.
 
-    def terminals(self):
-        """Список терминалов.
-
-        :returns: Все терминалы ТП в виде структуры terminalDto. Как правило, интересны только фронтовые \
-                    терминалы, см. поиск терминалов /corporation/terminal/search
+        :param anonymous: Front terminals have ``anonymous=False``; back-office
+            and system terminals have ``anonymous=True``.
+        :param name: Terminal name regex (optional).
+        :param computerName: Computer name regex (optional).
+        :returns: List of terminalDto.
         """
-        try:
-            ur = self.address + 'api/corporation/terminals?key=' + self._token
-            return requests.get(ur, timeout=DEFAULT_TIMEOUT).content
+        return self._get(
+            "api/corporation/terminal/search",
+            params=self._key(anonymous=str(anonymous).lower(), **kwargs),
+        ).content
 
-        except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу")
+    # ------------------------------------------------------------------
+    # Работники
+    # ------------------------------------------------------------------
 
-    def departments_find(self, code):
-        """Поиск подразделения.
+    def employees(self) -> bytes:
+        """Return all employees."""
+        return self._get("api/employees", params=self._key()).content
 
-        :param name: (optional) Код торгового предприятия. Значение элемента <code> из структуры corporateItemDto \
-                                    Регулярное выражение. Если задать просто строку, то ищет любое вхождение этой строки в код ТП с учетом регистра
+    # ------------------------------------------------------------------
+    # События
+    # ------------------------------------------------------------------
 
+    def events(self, **kwargs: Any) -> bytes:
+        """Return a list of events.
 
-        :type code: [departmentCode]
-
-        :returns: Структура corporateItemDto, если существует подразделение с данным кодом. \
-                    Поиск торгового предприятия по коду. Имеет смысл только для подразделений с типом DEPARTMENT \
-                    и в основном только в iikoChain, т.к. в рамках iikoRMS только одна сущность с таким типом
+        :param from_time: Start time ISO ``yyyy-MM-ddTHH:mm:ss.SSS`` (optional).
+        :param to_time: End time ISO (exclusive, optional).
+        :param from_rev: Start revision number (optional).
+        :returns: eventsList XML.
         """
-        try:
-            ur = self.address + 'api/corporation/departments/search?key=' + self._token
-            return requests.get(
-                ur, params=code, timeout=DEFAULT_TIMEOUT).content
+        return self._get("api/events", params=self._key(**kwargs)).content
 
-        except Exception as e:
-            print(e)
+    def events_filter(self, body: str | bytes) -> bytes:
+        """Return events filtered by event type and order number.
 
-    def stores_find(self, code):
-        """Список складов.
-
-
-        :param code: Код склада - регулярное выражение. Если задать просто строку, то ищет любое вхождение \
-                        этой строки в код склада с учетом регистра.
-        :type code: [storeCode]
-
-        :returns: corporateItemDto, если существует склад с данным кодом. Поиск склада по коду. Для работы этого \
-                    метода  необходимо, чтобы коды складов в ТП были заполнены (данное поле является необязательным \
-                    и по умолчанию пусто
-        """
-        try:
-            ur = self.address + 'api/corporation/stores/search?key=' + self._token
-            return requests.get(ur, params=code)
-
-        except requests.exceptions.ConnectTimeout:
-            print("Не удалось подключиться к серверу")
-
-    def groups_search(self, **kwargs):
-        """Поиск групп отделений.
-
-
-        :param name: Название группы.
-        :type name: regex
-        :param departmentId: ID подразделения
-        :type departmentId: string
-        """
-        try:
-            urls = self.address + 'api/corporation/terminal/search?key=' + self._token
-            return requests.get(
-                url=urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
-
-        except Exception as e:
-            print(e)
-
-    def terminals_search(self, anonymous=False, **kwargs):
-        """Поиск терминала.
-
-
-        :param anonymous: (bool) Фронты имеют anonymous=false, бекофисы и системные терминалы — true.
-        :param name: (regex) - (optional) Имя терминала в том виде, как он отображается в бекофисе.
-        :param computerName: (regex) - (optional) Имя компьютера
-
-        :return: Список terminalDto, если существуют подходящие терминалы
-        """
-        try:
-            urls = self.address + 'api/corporation/terminal/search?key=' + self._token + '&anonymous=' + anonymous
-            return requests.get(
-                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
-
-        except Exception as e:
-            print(e)
-
-    "----------------------------------Работники----------------------------------"
-
-    def employees(self):
-        """Работники"""
-        try:
-            urls = self.address + 'api/employees?key=' + self._token
-            return requests.get(urls, timeout=DEFAULT_TIMEOUT).content
-
-        except Exception as e:
-            print(e)
-
-    "----------------------------------События----------------------------------"
-
-    def events(self, **kwargs):
-        """Список событий.
-
-
-        :param from_time: (yyyy-MM-ddTHH:mm:ss.SSS) - (optional) Время с которого запрашиваются события, в формате ISO: yyyy-MM-ddTHH:mm:ss.SSS, по-умолчанию – начало текущих суток.
-        :param to_time: (yyyy-MM-ddTHH:mm:ss.SSS) - (optional) Время по которое (не включительно) запрашиваются \
-        события в формате ISO: yyyy-MM-ddTHH:mm:ss.SSS,, по-умолчанию граница не установлена.
-        :param from_rev: (int) - (optional) Ревизия, с которой запрашиваются события, число. Каждый ответ \
-        содержит тэг revision, значение которого соответствует ревизии, по которую включительно отданы события; \
-        при новых запросах следует использовать revision + 1 (revision из предыдущего ответа) для получения только \
-        новых событий. В штатном режиме одно и тоже событие повторно с разными ревизиями не приходит, однако \
-        такой гарантии не даётся. ID (UUID) события уникален, может использоваться в качестве ключа.
-
-        :return: Список событий в формате eventsList (см. XSD Список событий)
-        """
-        try:
-            ur = self.address + 'api/events?key=' + self._token
-            return requests.get(
-                ur, params=kwargs, timeout=DEFAULT_TIMEOUT).content
-
-        except Exception as e:
-            print(e)
-
-    def events_filter(self, body):
-        """
-        Список событий по фильтру событий и номеру заказа.
-
-
-        :param body: Список id событий, по которым производится фильтрация (application/xml).
-
-        Пример body
+        :param body: XML filter body (application/xml).
 
         .. code-block:: xml
 
             <eventsRequestData>
                 <events>
-                    <event>orderCancelPrecheque</event>
                     <event>orderPaid</event>
                 </events>
                 <orderNums>
@@ -284,639 +219,418 @@ class IikoServer:
                 </orderNums>
             </eventsRequestData>
 
-        :return: Дерево событий в формате groupsList (см. XSD Дерево событий).
+        :returns: groupsList XML.
         """
+        return self._post(
+            "api/events",
+            data=body,
+            params={"key": self._token},
+        ).content
 
-        try:
-            ur = self.address + 'api/events?key=' + self._token
-            return requests.post(
-                ur, data=body, timeout=DEFAULT_TIMEOUT).content
+    def events_meta(self) -> bytes:
+        """Return event metadata tree."""
+        return self._get("api/events/metadata", params=self._key()).content
 
-        except Exception as e:
-            print(e)
+    # ------------------------------------------------------------------
+    # Продукты
+    # ------------------------------------------------------------------
 
-    def events_meta(self):
-        """
-        Дерево событий.
+    def products(self, includeDeleted: bool = True) -> bytes:
+        """Return the product catalog.
 
-
-        """
-        try:
-            urls = self.address + 'api/events/metadata?key=' + self._token
-            return requests.get(urls, timeout=DEFAULT_TIMEOUT).content
-
-        except Exception as e:
-            print(e)
-
-    "----------------------------------Продукты----------------------------------"
-
-    def products(self, includeDeleted=True):
-        """Номенклатура.
-
-        .. csv-table:: Тип элемента номенклатуры
-           :header: "Код", "Наименование"
+        .. csv-table:: Product element types
+           :header: "Code", "Name"
            :widths: 15, 20
 
-           "GOODS", "Товар"
-           "DISH", Блюдо
-           PREPARED, Заготовка
-           SERVICE, Услуга
-           MODIFIER, Модификатор
-           OUTER, Внешние товары
-           PETROL, Топливо
-           RATE, Тариф
+           "GOODS", Item
+           "DISH", Dish
+           "PREPARED", Preparation
+           "SERVICE", Service
+           "MODIFIER", Modifier
 
-        .. csv-table:: Типы групп продукта
-           :header: "Код", "Наименование", Комментарий
-           :widths: 15, 20, 20
-
-           "PRODUCTS", "Продукт",
-           "MODIFIERS", Модификатор, "Используется только в номенклатуре, которая загружается /
-           и выгружается в/из RKeeper/StoreHouse"
-
-
-        :param includeDeleted: (bool) - (optional) Включать ли удаленные элементы номенклатуры в результат. По умолчанию false. Реализовано в 5.0 и новее.
-
+        :param includeDeleted: Include deleted items (default ``True``).
         """
-        try:
-            urls = self.address + 'api/products?key=' + self._token
-            return requests.get(
-                urls, params=includeDeleted, timeout=DEFAULT_TIMEOUT).content
+        return self._get(
+            "api/products",
+            params=self._key(includeDeleted=str(includeDeleted).lower()),
+        ).content
 
-        except Exception as e:
-            print(e)
+    def products_find(self, **kwargs: Any) -> bytes:
+        """Search the product catalog.
 
-    def products_find(self, **kwargs):
-        """Поиск номенклатуры
-
-        :param includeDeleted: (bool) Включать ли удаленные элементы номенклатуры в результат. По умолчанию false. Реализовано в 5.0 и новее.
-        :param name: (regex) - (optional) Название.
-        :param code: (regex) - (optional) Код быстрого набора в IikoFront.
-        :param mainUnit: (regex) - (optional) Базовая единица измерения.
-        :param num: (regex) - (optional) Артикул.
-        :param cookingPlaceType: (regex) - (optional) Тип места приготовления.
-        :param productGroupType: (regex) - (optional) Тип родительской группы.
-        :param productType: (regex) - (optional) Тип номенклатуры.
-
-        Выгрузка и поиск идет по всем неудаленным элементам номенклатуры. Включая товары поставщика. Т.к. сейчас нет возможности удалить товар поставщика, то выгрузка потянет все товары поставщика, даже те, которые реально не используются и не участвуют ни в одной связке товар у нас - товар поставщика.
-
+        :param includeDeleted: Include deleted items.
+        :param name: Name regex (optional).
+        :param code: Quick-dial code regex (optional).
+        :param mainUnit: Base unit of measure regex (optional).
+        :param num: Article number regex (optional).
+        :param cookingPlaceType: Cooking place type regex (optional).
+        :param productGroupType: Parent group type regex (optional).
+        :param productType: Product type regex (optional).
         """
-        try:
-            urls = self.address + 'api/products/search/?key=' + self._token
-            return requests.get(
-                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
+        return self._get(
+            "api/products/search/",
+            params=self._key(**kwargs),
+        ).content
 
-        except Exception as e:
-            print(e)
+    # ------------------------------------------------------------------
+    # Поставщики
+    # ------------------------------------------------------------------
 
-    "----------------------------------Поставщики----------------------------------"
+    def suppliers(self) -> bytes:
+        """Return all suppliers (employees structure)."""
+        return self._get("api/suppliers", params=self._key()).content
 
-    def suppliers(self):
-        """Список всех поставщиков
+    def suppliers_find(self, name: str = "", code: str = "") -> bytes:
+        """Search suppliers by name and/or code regex.
 
-        :return: Список всех поставщиков. Структура employees
+        :param name: Supplier name regex (optional).
+        :param code: Supplier code regex (optional).
+        :returns: employees XML.
         """
-        try:
-            urls = self.address + 'api/suppliers?key=' + self._token
-            return requests.get(urls, timeout=DEFAULT_TIMEOUT).content
+        return self._get(
+            "api/suppliers",
+            params=self._key(name=name or None, code=code or None),
+        ).content
 
-        except Exception as e:
-            print(e)
+    def suppliers_price(self, code: str, date: str | None = None) -> bytes:
+        """Return the supplier price list.
 
-    def suppliers_find(self, name='', code=''):
-        """Поиск поставщика
-
-        :param name: (regex) - (optional) регулярное выражение имени поставщика.
-        :param code: (regex) - (optional) регулярное выражение кода поставщика.
-
-        :return: Список найденных поставщиков. Структура employees (см. XSD Сотрудники)
+        :param code: Supplier GUID.
+        :param date: Price list start date ``DD.MM.YYYY`` (optional,
+            defaults to latest).
         """
-        try:
-            urls = self.address + 'api/suppliers?key=' + self._token
-            payload = {'name': name, 'code': code}
-            return requests.get(
-                urls, params=payload, timeout=DEFAULT_TIMEOUT).content
+        return self._get(
+            f"api/suppliers/{code}/pricelist",
+            params=self._key(date=date),
+        ).content
 
-        except Exception as e:
-            print(e)
+    # ------------------------------------------------------------------
+    # Отчеты
+    # ------------------------------------------------------------------
 
-    def suppliers_price(self, code, date=None):
-        """Поиск поставщика
+    def olap(
+        self,
+        report: str | None = None,
+        data_from: str | None = None,
+        data_to: str | None = None,
+        **kwargs: Any,
+    ) -> str:
+        """Return an OLAP report.
 
-        :param code: (date - DD.MM.YYYY) - (optional) Дата начала действия прайс-листа, необязательный. Если параметр не указан, возвращается последний прайс-лист.
+        :param report: Report type — ``SALES``, ``TRANSACTIONS``,
+            ``DELIVERIES``, or ``STOCK``.
+        :param data_from: Start date-time ISO.
+        :param data_to: End date-time ISO.
+        :param groupRow: Row grouping fields, e.g. ``WaiterName``.
+        :param groupCol: Column grouping fields.
+        :param agr: Aggregation fields.
+        :returns: Report XML/text.
         """
-        try:
-            urls = self.address + '/resto/api/suppliers/' + code + '/pricelist?key=' + self._token
-            return requests.get(
-                urls, params=date, timeout=DEFAULT_TIMEOUT).content
+        return self._get(
+            "api/reports/olap",
+            params={
+                "key": self._token,
+                "report": report,
+                "from": data_from,
+                "to": data_to,
+                **{k: v for k, v in kwargs.items() if v is not None},
+            },
+        ).text
 
-        except Exception as e:
-            print(e)
+    def store_operation(
+        self,
+        stores: str | None = None,
+        documentTypes: str | None = None,
+        productDetalization: bool = True,
+        showCostCorrections: bool = True,
+        presetId: str | None = None,
+        **kwargs: Any,
+    ) -> bytes:
+        """Return a warehouse operations report.
 
-    "----------------------------------Отчеты----------------------------------"
-
-    def olap(self, report=None, data_from=None, data_to=None, **kwargs):
-        """OLAP-отчет
-
-        :param report: (Тип отчета)
-            | ``SALES`` - По продажам.
-            | ``TRANSACTIONS`` - По транзакциям.
-            | ``DELIVERIES`` - По доставкам.
-            | ``STOCK`` - Контролю хранения.
-        :param groupRow: (Поля группировки) например:
-            ``groupRow=WaiterName&groupRow=OpenTime.``
-
-            Для определения списка доступных полей см.
-                - Описание полей OLAP отчета по продажам.
-                - Описание полей OLAP отчета по проводкам.
-                - Описание полей OLAP отчета по доставкам.
-            По полю можно проводить группировку, если значение в колонке Grouping для поля равно true.
-
-        :param groupCol: Поля для выделения значений по колонкам.
-
-            Для определения списка доступных полей см.
-                - Описание полей OLAP отчета по продажам.
-                - Описание полей OLAP отчета по проводкам.
-                - Описание полей OLAP отчета по доставкам.
-            По полю можно проводить группировку, если значение в колонке Grouping для поля равно true.
-
-        :param agr: Поля агрегации, например: agr=DishDiscountSum&agr=VoucherNum
-
-            Для определения списка доступных полей см.
-                - Описание полей OLAP отчета по продажам.
-                - Описание полей OLAP отчета по проводкам.
-                - Описание полей OLAP отчета по доставкам.
-            По полю можно проводить группировку, если значение в колонке Grouping для поля равно true.
-
-        :return: Структура report
-
+        :param stores: Warehouse GUID filter (optional, all if omitted).
+        :param documentTypes: Document type filter (optional, all if omitted).
+        :param productDetalization: Include per-product rows (default ``True``).
+        :param showCostCorrections: Include cost corrections (default ``True``).
+        :param presetId: Preset report GUID (optional).
         """
-        try:
-            urls = self.address + 'api/reports/olap?report=' + report + '&key=' + self._token + '&from=' + data_from + '&to=' + data_to
-            return requests.get(
-                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).text
+        return self._get(
+            "api/reports/storeOperations",
+            params=self._key(
+                stores=stores,
+                documentTypes=documentTypes,
+                productDetalization=productDetalization,
+                showCostCorrections=showCostCorrections,
+                presetId=presetId,
+                **kwargs,
+            ),
+        ).content
 
-        except Exception as e:
-            print(e)
+    def store_presets(self) -> bytes:
+        """Return warehouse report presets (storeReportPresets)."""
+        return self._get("api/reports/storeReportPresets", params=self._key()).content
 
-    def store_operation(self,
-                        stores=None,
-                        documentTypes=None,
-                        productDetalization=True,
-                        showCostCorrections=True,
-                        presetId=None):
-        """Отчет по складским операциям
+    def product_expense(self, departament: str, **kwargs: Any) -> bytes:
+        """Return a product consumption by sales report.
 
-        :param dateFrom: (DD.MM.YYYY) Начальная дата.
-        :param dateTo: (DD.MM.YYYY) Конечная дата.
-        :param stores: (GUID) - (optional) Список складов, по которым строится отчет. Если null или empty, строится по всем складам.
-        :param documentTypes: () - (optional) Типы документов, которые следует включать. Если null или пуст, включаются все документы.
-        :param productDetalization: (boolean) - (по умолчанию true) Если истина, отчет включает информацию по товарам, но не включает дату. Если ложь - отчет включает каждый документ одной строкой и заполняет суммы документов.
-        :param showCostCorrections: (boolean) - Включать ли коррекции себестоимости. Данная опция учитывается только если задан фильтр по типам документов. В противном случае коррекции включаются.
-        :param presetId: (GUID) - (optional) Id преднастроенного отчета. Если указан, то все настройки, кроме дат, игнорируются.
-
-        :returns: Структура storeReportPresets (см. XSD Пресеты отчетов по складским операциям).
-
+        :param departament: Department GUID.
+        :param dateFrom: Start date ``DD.MM.YYYY``.
+        :param dateTo: End date ``DD.MM.YYYY``.
+        :param hourFrom: Start hour (default -1, full day).
+        :param hourTo: End hour (default -1, full day).
+        :returns: dayDishValue XML.
         """
-        try:
-            urls = self.address + '/resto/api/reports/storeOperations?key=' + self._token
-            return requests.get(
-                urls,
-                params={
-                    stores, documentTypes, productDetalization,
-                    showCostCorrections, presetId
-                },
-                timeout=DEFAULT_TIMEOUT).content
+        return self._get(
+            "api/reports/productExpense",
+            params=self._key(department=departament, **kwargs),
+        ).content
 
-        except Exception as e:
-            print(e)
+    def sales(
+        self,
+        departament: str,
+        dishDetails: bool = False,
+        allRevenue: bool = True,
+        **kwargs: Any,
+    ) -> bytes:
+        """Return a revenue report.
 
-    def store_presets(self):
-        """Пресеты отчетов по складским операциям
-
-        :returns: Структура storeReportPresets (см. XSD Пресеты отчетов по складским операциям).
-
+        :param departament: Department GUID.
+        :param dateFrom: Start date ``DD.MM.YYYY``.
+        :param dateTo: End date ``DD.MM.YYYY``.
+        :param dishDetails: Include per-dish breakdown (default ``False``).
+        :param allRevenue: All payment types if ``True``, revenue only if
+            ``False`` (default ``True``).
+        :returns: dayDishValue XML.
         """
-        try:
-            urls = self.address + '/resto/api/reports/storeReportPresets?key=' + self._token
-            return requests.get(urls, timeout=DEFAULT_TIMEOUT).content
+        return self._get(
+            "api/reports/sales",
+            params=self._key(
+                department=departament,
+                dishDetails=dishDetails,
+                allRevenue=allRevenue,
+                **kwargs,
+            ),
+        ).content
 
-        except Exception as e:
-            print(e)
+    def mounthly_plan(self, departament: str, **kwargs: Any) -> bytes:
+        """Return the monthly revenue plan.
 
-    def product_expense(self, departament, **kwargs):
-        """Расход продуктов по продажам
-
-        :param department: (GUID) Подразделение
-        :param dateFrom: (DD.MM.YYYY) Начальная дата.
-        :param dateTo: (DD.MM.YYYY) Конечная дата.
-        :param hourFrom: (hh) Час начала интервала выборки в сутках (по умолчанию -1, все время), по умолчанию -1.
-        :param hourTo: (hh) Час окончания интервала выборки в сутках (по умолчанию -1, все время), по умолчанию -1.
-
-        :returns: Структура dayDishValue (см. XSD Расход продуктов по продажам)
+        :param departament: Department GUID.
+        :param dateFrom: Start date ``DD.MM.YYYY``.
+        :param dateTo: End date ``DD.MM.YYYY``.
+        :returns: budgetPlanItemDtoes XML.
         """
-        try:
-            urls = self.address + '/resto/api/reports/productExpense?key=' + self._token
-            return requests.get(
-                urls, params={departament, kwargs},
-                timeout=DEFAULT_TIMEOUT).content
+        return self._get(
+            "api/reports/monthlyIncomePlan",
+            params=self._key(department=departament, **kwargs),
+        ).content
 
-        except Exception as e:
-            print(e)
+    def ingredient_entry(
+        self,
+        departament: str,
+        includeSubtree: bool = False,
+        **kwargs: Any,
+    ) -> bytes:
+        """Return an ingredient-in-dish report.
 
-    def sales(self, departament, dishDetails=False, allRevenue=True, **kwargs):
-        """Отчет по выручке
-
-        :param department: (GUID) Подразделение
-        :param dateFrom: (DD.MM.YYYY) Начальная дата.
-        :param dateTo: (DD.MM.YYYY) Конечная дата.
-        :param hourFrom: (hh) Час начала интервала выборки в сутках (по умолчанию -1, все время), по умолчанию -1.
-        :param hourTo: (hh) Час окончания интервала выборки в сутках (по умолчанию -1, все время), по умолчанию -1.
-        :param dishDetails: (boolean) Включать ли разбивку по блюдам (true/false), по умолчанию false.
-        :param allRevenue: (boolean)  Фильтрация по типам оплат (true - все типы, false - только выручка), по умолчанию true.
-
-        :returns: Структура dayDishValue (см. XSD Отчет по выручке)
+        :param departament: Department GUID.
+        :param includeSubtree: Include sub-tree rows (default ``False``).
+        :param dateFrom: Start date ``DD.MM.YYYY``.
+        :param dateTo: End date ``DD.MM.YYYY``.
+        :param productArticle: Product article (search priority over product).
+        :returns: budgetPlanItemDtoes XML.
         """
+        return self._get(
+            "api/reports/ingredientEntry",
+            params=self._key(
+                department=departament,
+                includeSubtree=includeSubtree,
+                **kwargs,
+            ),
+        ).content
 
-        try:
-            urls = self.address + '/resto/api/reports/sales?key=' + self._token + \
-                   '&department=' + departament
-            return requests.get(
-                urls,
-                params={dishDetails, allRevenue, kwargs},
-                timeout=DEFAULT_TIMEOUT).content
+    def olap2(self, body: dict) -> dict:
+        """Return OLAP report data using the v2 JSON API.
 
-        except Exception as e:
-            print(e)
+        :param body: Report request dict.  See API docs for the full schema::
 
-    def mounthly_plan(self, departament, **kwargs):
-        """План по выручке за день
-
-        :param department: (GUID) Подразделение
-        :param dateFrom: (DD.MM.YYYY) Начальная дата.
-        :param dateTo: (DD.MM.YYYY) Конечная дата.
-
-        :returns: Структура budgetPlanItemDtoes (см. XSD План по выручке за день)
-
-
-        """
-        try:
-            urls = self.address + '/resto/api/reports/monthlyIncomePlan?key=' + self._token + \
-                   '&department=' + departament
-            return requests.get(
-                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
-
-        except Exception as e:
-            print(e)
-
-    def ingredient_entry(self, departament, includeSubtree=False, **kwargs):
-        """Отчет о вхождении товара в блюдо
-
-        :param department: (GUID) Подразделение
-        :param dateFrom: (DD.MM.YYYY) Начальная дата.
-        :param dateTo: (DD.MM.YYYY) Конечная дата.
-        :param productArticle: (string) Артикул продукта (приоритет поиска:productArticle, product)
-        :param includeSubtree: (bool) - (optional) Включать ли в отчет строки поддеревьев (по умолчанию false)
-
-        :returns: Структура budgetPlanItemDtoes (см. XSD План по выручке за день)
-        """
-        try:
-            urls = self.address + '/resto/api/reports/ingredientEntry?key=' + self._token
-            return requests.get(
-                urls,
-                params={departament, includeSubtree, kwargs},
-                timeout=DEFAULT_TIMEOUT).content
-
-        except Exception as e:
-            print(e)
-
-    def olap2(self,
-              body):
-        """Поля OLAP-отчета
-
-        :param reportType: (Тип отчета)
-            | ``SALES`` - По продажам.
-            | ``TRANSACTIONS`` - По транзакциям.
-            | ``DELIVERIES`` - По доставкам.
-        :param json: (optional) Json с полями
-        :type json: json
-
-        .. code-block:: json
-
-           {
-              "FieldName":{
-                "name":"StringValue",
-                "type":"StringValue",
-                "aggregationAllowed":"booleanValue",
-                "groupingAllowed":"booleanValue",
-                "filteringAllowed":"booleanValue",
-                "tags":[
-                  "StringValue1",
-                  "StringValue2",
-                  "...",
-                  "StringValueN"
-                ]
-              }
+            {
+                "reportType": "SALES",
+                "buildSummary": "true",
+                "groupByRowFields": ["OpenDate.Typed", "Department"],
+                "aggregateFields": ["DishDiscountSumInt.withoutVAT"],
+                "filters": { ... }
             }
 
-        :param FieldName: Название колонки отчета. Именно это название используется для получения данных отчета
-        :type FieldName: string
-        :param name: Название колонки отчета в iikoOffice. Справочная информация.
-        :type name: string
-        :param type: Тип поля. Возможны следующие значения:
-        :type type: string
-
-
-        | ENUM - Перечислимые значения
-        | STRING - Строка
-        | ID - Внутренний идентификатор объекта в iiko (начиная с 5.0).
-        | DATETIME - Дата и время
-        | INTEGER - Целое
-        | PERCENT - Процент (от 0 до 1)
-        | DURATION_IN_SECONDS - Длительность в секундах
-        | AMOUNT - Количество
-        | MONEY - Денежная сумма
-
-        :param aggregationAllowed: (optional) Если true, то по данной колонке можно агрегировать данные
-        :type aggregationAllowed: bool
-        :param groupingAllowed: (optional) Если true, то по данной колонке можно группировать данные. По умолчанию false.
-        :type groupingAllowed: bool
-        :param filteringAllowed: (optional) Если true, то по данной колонке можно фильтровать данные. По умолчанию false.
-        :type filteringAllowed: bool
-        :param tags: (optional) Список категорий отчета, к которому относится данное поле. Справочная информация. Соответствует списку в верхнем правом углу конструктора отчета в iikoOffice.
-        
-        :return: Json структура списка полей с информацией по возможностям фильтрации, агрегации и группировки.Устаревшие поля (deprecated) не выводятся.
-
+        :returns: Parsed JSON response.
         """
-        try:
-            urls = self.address + 'api/v2/reports/olap?key=' + self._token
-            return requests.post(
-                urls,
-                json=body,
-                timeout=DEFAULT_TIMEOUT)
+        return self._post(
+            "api/v2/reports/olap",
+            params={"key": self._token},
+            json=body,
+        ).json()
 
-        except Exception as e:
-            print(e)
+    def reports_balance(
+        self,
+        timestamp: str,
+        account: str | None = None,
+        counteragent: str | None = None,
+        department: str | None = None,
+    ) -> dict:
+        """Return account, counteragent, and department balances.
 
-    def reports_balance(self,
-                        timestamp,
-                        account=None,
-                        counteragent=None,
-                        department=None):
+        :param timestamp: Accounting date-time ``yyyy-MM-dd'T'HH:mm:ss``.
+        :param account: Account GUID filter (optional, repeatable).
+        :param counteragent: Counteragent GUID filter (optional).
+        :param department: Department GUID filter (optional).
+        :returns: Parsed JSON with quantity and monetary balances.
         """
-        Балансы по счетам, контрагентам и подразделениям
+        return self._get(
+            "reports/balance/counteragents",
+            params=self._key(
+                timestamp=timestamp,
+                account=account,
+                counteragent=counteragent,
+                department=department,
+            ),
+        ).json()
 
-        :param timestamp: учетная-дата время отчета в формате yyyy-MM-dd'T'HH:mm:ss.
-        :type timestamp: time
-        :param account: (optional)  id счета для фильтрации (можно указать несколько).
-        :type timestamp: string
-        :param counteragent: (optional) id контрагента для фильтрации (необязательный, можно указать несколько).
-        :department: (optional) id подразделения для фильтрации (необязательный, можно указать несколько).
-        
-        :return: Возвращает количественные (amount) и денежные (sum) остатки товаров (product) на складах (store) на заданную учетную дату-время.
-        См. ниже пример результата.
+    # ------------------------------------------------------------------
+    # Накладные
+    # ------------------------------------------------------------------
 
+    def invoice_in(self, **kwargs: Any) -> bytes:
+        """Export incoming invoices.
+
+        :param from: Start date ``YYYY-MM-DD`` (inclusive).
+        :param to: End date ``YYYY-MM-DD`` (inclusive, time ignored).
+        :param supplierId: Supplier GUID filter (optional).
+        :returns: Incoming invoice XSD.
         """
-        try:
-            urls = self.address + '/resto/reports/balance/counteragents?key=' + self._token
-            return requests.get(
-                urls,
-                params={timestamp, account, counteragent, department},
-                timeout=DEFAULT_TIMEOUT).json()
+        return self._get(
+            "api/documents/export/incomingInvoice",
+            params=self._key(**kwargs),
+        ).content
 
-        except Exception as e:
-            print(e)
+    def invoice_out(self, **kwargs: Any) -> bytes:
+        """Export outgoing invoices.
 
-    "----------------------------------Накладные----------------------------------"
-
-    def invoice_in(self, **kwargs):
-        """Выгрузка приходных накладных
-
-        :param from: начальная дата (входит в интервал).
-        :type from: YYYY-MM-DD
-        :param to: конечная  дата (входит в интервал, время не учитывается).
-        :type to: YYYY-MM-DD
-        :param supplierId: Id поставщика.
-        :type supplierId: GUID
-
-        :result: XSD Приходная накладная
+        :param from: Start date ``YYYY-MM-DD`` (inclusive).
+        :param to: End date ``YYYY-MM-DD`` (inclusive, time ignored).
+        :param supplierId: Supplier GUID filter (optional).
+        :returns: Outgoing invoice XSD.
         """
-        try:
-            urls = self.address + '/resto/api/documents/export/incomingInvoice?key=' + self._token
-            return requests.get(
-                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
+        return self._get(
+            "api/documents/export/outgoingInvoice",
+            params=self._key(**kwargs),
+        ).content
 
-        except Exception as e:
-            print(e)
+    def invoice_number_in(self, current_year: bool = True, **kwargs: Any) -> bytes:
+        """Export an incoming invoice by document number.
 
-    def invoice_out(self, **kwargs):
-        """Выгрузка расходных накладных
-
-        :param from: начальная дата (входит в интервал).
-        :type from: YYYY-MM-DD
-        :param to: конечная  дата (входит в интервал, время не учитывается).
-        :type to: YYYY-MM-DD
-        :param supplierId: Id поставщика.
-        :type supplierId: (optional) GUID
-
-        При запросе без постащиков возвращает все расходные накладные, попавшие в интервал.
-
-        :result: XSD Приходная накладная
+        :param number: Document number.
+        :param current_year: Restrict to current year (default ``True``).
+            When ``False``, *from* and *to* must be provided.
+        :param from: Start date ``YYYY-MM-DD`` (required when
+            ``current_year=False``).
+        :param to: End date ``YYYY-MM-DD`` (required when
+            ``current_year=False``).
         """
-        try:
-            urls = self.address + '/resto/api/documents/export/outgoingInvoice?key=' + self._token
-            return requests.get(
-                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
+        return self._get(
+            "api/documents/export/incomingInvoice/byNumber",
+            params=self._key(
+                currentYear=str(current_year).lower(), **kwargs
+            ),
+        ).content
 
-        except Exception as e:
-            print(e)
+    def invoice_number_out(self, current_year: bool = True, **kwargs: Any) -> bytes:
+        """Export an outgoing invoice by document number.
 
-    def invoice_number_in(self, current_year=True, **kwargs):
-        """Выгрузка приходной накладной по ее номеру
-
-        :param number: номер документа.
-        :type number: string
-        :param from: (optional) начальная дата (входит в интервал).
-        :type from: YYYY-MM-DD
-        :param to: (optional) конечная  дата (входит в интервал, время не учитывается).
-        :type to: YYYY-MM-DD
-        :param currentYear: только за текущий год (по умолчанию True).
-        :type supplierId: Boolean
-
-        .. note::
-            При currentYear = true, вернет документы с указанным номером документа только за текущий год. Параметры from и to должны отсутствовать.
-
-            При currentYear = false параметры from и to должны быть указаны.
-
-
+        :param number: Document number.
+        :param current_year: Restrict to current year (default ``True``).
+            When ``False``, *from* and *to* must be provided.
+        :param from: Start date ``YYYY-MM-DD`` (required when
+            ``current_year=False``).
+        :param to: End date ``YYYY-MM-DD`` (required when
+            ``current_year=False``).
         """
+        return self._get(
+            "api/documents/export/outgoingInvoice/byNumber",
+            params=self._key(
+                currentYear=str(current_year).lower(), **kwargs
+            ),
+        ).content
 
-        try:
-            urls = self.address + '/resto/api/documents/export/incomingInvoice/byNumber?key=' \
-                   + self._token + '&currentYear' + current_year
-            return requests.get(
-                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
+    def production_doc(self, xml: str | bytes) -> bytes:
+        """Upload a production act (акт приготовления).
 
-        except Exception as e:
-            print(e)
-
-    def invoice_number_out(self, current_year=True, **kwargs):
-        """Выгрузка расходной накладной по ее номеру.
-
-
-        :param number: номер документа.
-        :type number: string
-        :param from: (optional) начальная дата (входит в интервал).
-        :type from: YYYY-MM-DD
-        :param to: (optional) конечная  дата (входит в интервал, время не учитывается).
-        :type to: YYYY-MM-DD
-        :param currentYear: только за текущий год (по умолчанию True).
-        :type supplierId: Boolean
-
-        .. note::
-            При currentYear = true, вернет документы с указанным номером документа только за текущий год. Параметры from и to должны отсутствовать.
-
-            При currentYear = false параметры from и to должны быть указаны.
+        :param xml: XML document body.
         """
+        return self._post(
+            "api/documents/import/productionDocument",
+            params={"key": self._token},
+            data=xml,
+            headers={"Content-type": "text/xml"},
+        ).content
 
-        try:
-            urls = self.address + '/resto/api/documents/export/outgoingInvoice/byNumber?key=' \
-                   + self._token + '&currentYear' + current_year
-            return requests.get(
-                urls, params=kwargs, timeout=DEFAULT_TIMEOUT).content
+    # ------------------------------------------------------------------
+    # Кассовые смены
+    # ------------------------------------------------------------------
 
-        except Exception as e:
-            print(e)
+    def close_session(
+        self,
+        dateFrom: str | None = None,
+        dateTo: str | None = None,
+    ) -> bytes:
+        """Return a list of cash register sessions.
 
-    def production_doc(self, xml):
-        """Загрузка акта приготовления"""
-        try:
-            target_url = self.address + '/api/documents/import/productionDocument?key' + self._token
-            headers = {'Content-type': 'text/xml'}
-            return requests.post(
-                target_url, body=xml, headers=headers,
-                timeout=DEFAULT_TIMEOUT).content
-
-        except Exception as e:
-            print(e)
-
-    "----------------------------------Получение данных по кассовым сменам:----------------------------------"
-
-    def close_session(self, dateFrom=None, dateTo=None):
-        """Список кассовых смен
-
-        :param dateFrom: (DD.MM.YYYY) Начальная дата.
-        :param dateTo: (DD.MM.YYYY) Конечная дата.
-
-        :returns: Список всех кассовых смен в заданном интервале. В формате CloseSessionDto.
-
+        :param dateFrom: Start date ``DD.MM.YYYY``.
+        :param dateTo: End date ``DD.MM.YYYY``.
+        :returns: CloseSessionDto list.
         """
-        try:
-            urls = self.address + 'resto/api/closeSession/list?key=' \
-                   + self._token
-            return requests.get(
-                urls, params={dateFrom, dateTo},
-                timeout=DEFAULT_TIMEOUT).content
+        return self._get(
+            "api/closeSession/list",
+            params=self._key(dateFrom=dateFrom, dateTo=dateTo),
+        ).content
 
-        except Exception as e:
-            print(e)
+    def session(
+        self,
+        from_time: str | None = None,
+        to_time: str | None = None,
+    ) -> bytes:
+        """Return cash register session details.
 
-    def session(self, from_time=None, to_time=None):
-        """Информация о кассовых сменах
-
-        :param from_time: Время с которого запрашиваются данные по кассовым сменам, в формате ISO.
-        :type from: yyyy-MM-ddTHH:mm:ss.SSS
-        :param to_time:  Время по которое (не включительно) запрашиваются данные по кассовым сменам в формате ISO.
-        :type to: yyyy-MM-ddTHH:mm:ss.SSS
-
-        :returns: Информация о кассовых сменах
-
+        :param from_time: Start ISO ``yyyy-MM-ddTHH:mm:ss.SSS``.
+        :param to_time: End ISO (exclusive).
+        :returns: Session information.
         """
-        try:
-            urls = self.address + '/resto/api/events/sessions?key=' \
-                   + self._token
-            return requests.get(
-                urls, params={from_time, to_time},
-                timeout=DEFAULT_TIMEOUT).content
+        return self._get(
+            "api/events/sessions",
+            params=self._key(**{"from": from_time, "to": to_time}),
+        ).content
 
-        except Exception as e:
-            print(e)
+    # ------------------------------------------------------------------
+    # EDI
+    # ------------------------------------------------------------------
 
-    "----------------------------------EDI----------------------------------"
+    def edi(
+        self,
+        edi: str,
+        gln: str | None = None,
+        inn: str | None = None,
+        kpp: str | None = None,
+        name: str | None = None,
+    ) -> bytes:
+        """Return EDI orders for a participant and supplier.
 
-    def edi(self, edi, gln=None, inn=None, kpp=None, name=None):
-        """Список заказов для участника EDI senderId и поставщика seller
-
-        :param ediSystem: Идентификатор участника EDI, подключенной к нашему REST API. Каждый участник EDI должен \
-            получить свой собственный GUID ключ - идентификатор системы EDI (EdiSystem) для подключения к REST API электронного документооборота iiko. См. "Обмен данными/Системы EDI" в iikoOffce..
-        :type ediSystem: GUID
-        :param gln: (optional) GLN поставщика . Может отсутствовать, но тогда параметр inn должен быть заполнен.
-        :type gln: String
-        :param inn: (optional) ИНН (идентификационный номер налогоплательщика). Может отсутствовать, но тогда параметр gln должен быть заполнен.
-        :type inn: String
-        :param kpp: (optional) КПП (код причины постановки).
-        :type kpp: String
-        :param name: (optional) Имя поставщика
-        :type name: String
-
-
-        :returns: Высылает список заказов EDI для зарегистрированного в системе iiko участника ediSystem и указанного поставщика. \
-                    В списке присутствуют также те отмененные на стороне iiko заказы, получение которых участник подтвердил ранее. \
-                    Получение как отправленных, так и отмененных заказов требуется подтверждать, см. метод edi/{ediSystem}/orders/ack
-
+        :param edi: EDI system GUID (EdiSystem identifier).
+        :param gln: Supplier GLN (required if *inn* is absent).
+        :param inn: Supplier INN (required if *gln* is absent).
+        :param kpp: Supplier KPP (optional).
+        :param name: Supplier name (optional).
+        :returns: EDI order list.
         """
-
-        try:
-            urls = self.address + 'edi/' + edi + '/orders/bySeller'
-            payload = {'gln': gln, 'inn': inn, 'kpp': kpp, 'name': name}
-            return requests.get(
-                urls, params=payload, timeout=DEFAULT_TIMEOUT).content
-
-        except Exception as e:
-            print(e)
-
-body = {
-   "reportType":"SALES",
-   "buildSummary":"true",
-   "groupByRowFields":[
-    "OpenDate.Typed",
-    "Department",
-    "Department.Code",
-    "Delivery.ServiceType"
-   ],
-   "groupByColFields":[
-
-   ],
-   "aggregateFields":[
-      "DishDiscountSumInt.withoutVAT"
-   ],
-   "filters":{
-      "OpenDate.Typed":{
-         "filterType":"DateRange",
-         "periodType":"CUSTOM",
-         "from":"2021-01-26T00:00:00.000",
-         "to":"2021-01-27T00:00:00.000"
-      },
-      "DeletedWithWriteoff":{
-         "filterType":"IncludeValues",
-         "values":[
-            "NOT_DELETED"
-         ]
-      },
-      "OrderDeleted":{
-         "filterType":"IncludeValues",
-         "values":[
-            "NOT_DELETED"
-         ]
-      }
-      ,
-      "Delivery.ServiceType":{
-         "filterType":"ExcludeValues",
-         "values":[
-            "COURIER",
-            "PICKUP"
-         ]
-      }
-   }
-}
-
+        return self._get(
+            f"edi/{edi}/orders/bySeller",
+            params=self._key(gln=gln, inn=inn, kpp=kpp, name=name),
+        ).content
