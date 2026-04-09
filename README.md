@@ -7,10 +7,10 @@
 <p align="center">Python-библиотека для работы с API iiko ERP</p>
 
 <p align="center">
-  <a href="https://badge.fury.io/py/Pyiiko"><img src="https://badge.fury.io/py/Pyiiko.svg" alt="PyPI version"></a>
-  <a href="https://github.com/gadzhi/pyiiko/actions/workflows/ci.yml"><img src="https://github.com/gadzhi/pyiiko/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/pypi/l/Pyiiko.svg" alt="License: Apache 2.0"></a>
-  <a href="https://pypi.org/project/Pyiiko/"><img src="https://img.shields.io/pypi/pyversions/Pyiiko.svg" alt="Python versions"></a>
+  <a href="https://pypi.org/project/Pyiiko/"><img src="https://img.shields.io/pypi/v/Pyiiko?color=blue" alt="PyPI version"></a>
+  <a href="https://pypi.org/project/Pyiiko/"><img src="https://img.shields.io/pypi/pyversions/Pyiiko" alt="Python versions"></a>
+  <a href="https://pypi.org/project/Pyiiko/"><img src="https://img.shields.io/pypi/dm/Pyiiko?color=green" alt="PyPI downloads"></a>
+  <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/pypi/l/Pyiiko" alt="License: Apache 2.0"></a>
 </p>
 
 ---
