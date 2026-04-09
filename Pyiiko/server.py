@@ -8,12 +8,13 @@ from typing import Any
 from lxml import etree
 
 from ._base import DEFAULT_TIMEOUT, BaseIikoClient
+from ._server_nomenclature import _NomenclatureMixin
 from .exceptions import IikoAuthError
 
 logger = logging.getLogger(__name__)
 
 
-class IikoServer(BaseIikoClient):
+class IikoServer(_NomenclatureMixin, BaseIikoClient):
     """Client for the iiko Server REST API (on-premise installations).
 
     Authenticates on construction and stores the token for subsequent calls.

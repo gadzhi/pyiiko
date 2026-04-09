@@ -696,3 +696,232 @@ def test_edi_none_params_omitted(server):
     url = responses.calls[0].request.url
     assert "gln=" not in url
     assert "inn=" not in url
+
+
+# ---------------------------------------------------------------------------
+# Nomenclature v2
+# ---------------------------------------------------------------------------
+
+_NOM_BASE = f"{SERVER_BASE}/api/v2/entities/products"
+
+
+@responses.activate
+def test_nomenclature_list(server):
+    responses.add(responses.GET, f"{_NOM_BASE}/list", json=[{"id": "prod-1"}], status=200)
+    result = server.nomenclature_list()
+    assert result == [{"id": "prod-1"}]
+
+
+@responses.activate
+def test_nomenclature_list_with_filters(server):
+    responses.add(responses.GET, f"{_NOM_BASE}/list", json=[], status=200)
+    server.nomenclature_list(
+        include_deleted=True,
+        revision_from=5,
+        ids=["uuid-1"],
+        types=["GOODS", "DISH"],
+    )
+    url = responses.calls[0].request.url
+    assert "includeDeleted=true" in url
+    assert "revisionFrom=5" in url
+    assert "id=uuid-1" in url
+    assert "type=GOODS" in url
+    assert "type=DISH" in url
+
+
+@responses.activate
+def test_nomenclature_save(server):
+    payload = {"name": "Товар", "type": "GOODS", "mainUnit": "unit-uuid"}
+    responses.add(
+        responses.POST,
+        f"{_NOM_BASE}/save",
+        json={"result": "SUCCESS", "errors": None, "response": payload},
+        status=200,
+    )
+    result = server.nomenclature_save(payload)
+    assert result["result"] == "SUCCESS"
+
+
+@responses.activate
+def test_nomenclature_save_query_params(server):
+    responses.add(
+        responses.POST,
+        f"{_NOM_BASE}/save",
+        json={"result": "SUCCESS"},
+        status=200,
+    )
+    server.nomenclature_save({"name": "X", "type": "GOODS", "mainUnit": "u"})
+    url = responses.calls[0].request.url
+    assert "generateNomenclatureCode=true" in url
+    assert "generateFastCode=true" in url
+
+
+@responses.activate
+def test_nomenclature_update(server):
+    payload = {"id": "prod-uuid", "name": "Обновлённый"}
+    responses.add(
+        responses.POST,
+        f"{_NOM_BASE}/update",
+        json={"result": "SUCCESS"},
+        status=200,
+    )
+    result = server.nomenclature_update(payload)
+    assert result["result"] == "SUCCESS"
+
+
+@responses.activate
+def test_nomenclature_delete(server):
+    responses.add(
+        responses.POST, f"{_NOM_BASE}/delete", json={"result": "SUCCESS"}, status=200
+    )
+    result = server.nomenclature_delete(["prod-uuid-1", "prod-uuid-2"])
+    assert result["result"] == "SUCCESS"
+
+
+@responses.activate
+def test_nomenclature_restore(server):
+    responses.add(
+        responses.POST, f"{_NOM_BASE}/restore", json={"result": "SUCCESS"}, status=200
+    )
+    result = server.nomenclature_restore(["prod-uuid-1"])
+    assert result["result"] == "SUCCESS"
+
+
+@responses.activate
+def test_nomenclature_group_list(server):
+    responses.add(
+        responses.GET,
+        f"{_NOM_BASE}/group/list",
+        json=[{"id": "grp-1", "name": "Группа"}],
+        status=200,
+    )
+    result = server.nomenclature_group_list()
+    assert result[0]["id"] == "grp-1"
+
+
+@responses.activate
+def test_nomenclature_group_list_with_filters(server):
+    responses.add(responses.GET, f"{_NOM_BASE}/group/list", json=[], status=200)
+    server.nomenclature_group_list(
+        include_deleted=True, ids=["g1"], parent_ids=["p1", "p2"]
+    )
+    url = responses.calls[0].request.url
+    assert "includeDeleted=true" in url
+    assert "id=g1" in url
+    assert "parentId=p1" in url
+    assert "parentId=p2" in url
+
+
+@responses.activate
+def test_nomenclature_group_save(server):
+    responses.add(
+        responses.POST,
+        f"{_NOM_BASE}/group/save",
+        json={"result": "SUCCESS"},
+        status=200,
+    )
+    result = server.nomenclature_group_save({"name": "Новая группа"})
+    assert result["result"] == "SUCCESS"
+
+
+@responses.activate
+def test_nomenclature_group_update(server):
+    responses.add(
+        responses.POST,
+        f"{_NOM_BASE}/group/update",
+        json={"result": "SUCCESS"},
+        status=200,
+    )
+    result = server.nomenclature_group_update({"id": "grp-uuid", "name": "Ред."})
+    assert result["result"] == "SUCCESS"
+
+
+@responses.activate
+def test_nomenclature_group_delete(server):
+    responses.add(
+        responses.POST,
+        f"{_NOM_BASE}/group/delete",
+        json={"result": "SUCCESS"},
+        status=200,
+    )
+    result = server.nomenclature_group_delete(["grp-uuid"])
+    assert result["result"] == "SUCCESS"
+
+
+@responses.activate
+def test_nomenclature_group_restore(server):
+    responses.add(
+        responses.POST,
+        f"{_NOM_BASE}/group/restore",
+        json={"result": "SUCCESS"},
+        status=200,
+    )
+    result = server.nomenclature_group_restore(["grp-uuid"])
+    assert result["result"] == "SUCCESS"
+
+
+@responses.activate
+def test_nomenclature_category_list(server):
+    responses.add(
+        responses.GET,
+        f"{_NOM_BASE}/category/list",
+        json=[{"id": "cat-1", "name": "Категория"}],
+        status=200,
+    )
+    result = server.nomenclature_category_list()
+    assert result[0]["id"] == "cat-1"
+
+
+@responses.activate
+def test_nomenclature_category_list_include_deleted(server):
+    responses.add(responses.GET, f"{_NOM_BASE}/category/list", json=[], status=200)
+    server.nomenclature_category_list(include_deleted=True)
+    assert "includeDeleted=true" in responses.calls[0].request.url
+
+
+@responses.activate
+def test_nomenclature_category_save(server):
+    responses.add(
+        responses.POST,
+        f"{_NOM_BASE}/category/save",
+        json={"result": "SUCCESS"},
+        status=200,
+    )
+    result = server.nomenclature_category_save({"name": "Новая"})
+    assert result["result"] == "SUCCESS"
+
+
+@responses.activate
+def test_nomenclature_category_update(server):
+    responses.add(
+        responses.POST,
+        f"{_NOM_BASE}/category/update",
+        json={"result": "SUCCESS"},
+        status=200,
+    )
+    result = server.nomenclature_category_update({"id": "cat-uuid", "name": "Ред."})
+    assert result["result"] == "SUCCESS"
+
+
+@responses.activate
+def test_nomenclature_category_delete(server):
+    responses.add(
+        responses.POST,
+        f"{_NOM_BASE}/category/delete",
+        json={"result": "SUCCESS"},
+        status=200,
+    )
+    result = server.nomenclature_category_delete(["cat-uuid"])
+    assert result["result"] == "SUCCESS"
+
+
+@responses.activate
+def test_nomenclature_category_restore(server):
+    responses.add(
+        responses.POST,
+        f"{_NOM_BASE}/category/restore",
+        json={"result": "SUCCESS"},
+        status=200,
+    )
+    result = server.nomenclature_category_restore(["cat-uuid"])
+    assert result["result"] == "SUCCESS"
