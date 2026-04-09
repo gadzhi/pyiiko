@@ -19,6 +19,7 @@
 
 - **iiko Server API** — on-premise установки (складской учёт, номенклатура, отчёты OLAP, сотрудники, накладные, EDI)
 - **iiko Transport API** — облачный API (организации, терминалы, доставки, города, улицы)
+- **iiko Public Web API** — облачный API нового поколения (документооборот, номенклатура, закупки)
 - Автоматический retry на 5xx ошибки (3 попытки с backoff)
 - Единая иерархия исключений: `IikoError` → `IikoAuthError` / `IikoAPIError`
 - Context manager для автоматического освобождения ресурсов
@@ -64,6 +65,36 @@ with IikoServer(ip="...", login="...", password="...") as server:
 
 ```python
 server = IikoServer(ip="https://...", token="your-existing-token")
+```
+
+### iiko Public Web API
+
+```python
+from Pyiiko import IikoWeb
+
+client = IikoWeb(api_key="your-api-key")
+
+# Список складов
+stores = client.stores()
+
+# Список продуктов с пагинацией
+products = client.products(limit=100, offset=0)
+
+# Экспорт приходных накладных
+invoices = client.incoming_invoice_export(
+    department_id="dept-guid-...",
+    date_from="2024-01-01",
+    date_to="2024-01-31",
+)
+
+# Список заказов на закупку
+orders = client.orders_list({"storeId": 1, "limit": 50})
+```
+
+Передайте уже полученный токен, чтобы пропустить авторизацию:
+
+```python
+client = IikoWeb(token={"token": "eyJ...", "expires_in": 9999999999})
 ```
 
 ### iiko Transport (Cloud)
@@ -164,6 +195,95 @@ except IikoAPIError as e:
 | `by_id(org_id, order_id)` | Доставка по ID |
 | `by_delivery_date(org_id, delivery_date_from)` | Доставки по дате |
 | `by_revision(org_id, revision)` | Доставки с ревизии |
+
+### `IikoWeb`
+
+#### Авторизация
+
+| Метод | Описание |
+|---|---|
+| `get_token()` | Получить новый Bearer-токен по API-ключу |
+| `token()` | Вернуть текущий токен (dict) |
+
+#### Справочники (entities)
+
+| Метод | Описание |
+|---|---|
+| `stores()` | Список складов |
+| `store(store_id)` | Склад по ID |
+| `products(filters, limit, offset)` | Номенклатура |
+| `product_categories(filters, limit, offset)` | Категории продуктов |
+| `product_sizes(filters, limit, offset)` | Размеры продуктов |
+| `users(filters, limit, offset)` | Пользователи |
+| `payment_types(filters, limit, offset)` | Типы оплат |
+| `cash_flow_categories(filters, limit, offset)` | Статьи ДДС |
+
+#### Номенклатура
+
+| Метод | Описание |
+|---|---|
+| `update_barcodes(payload)` | Обновить штрих-коды |
+
+#### Документооборот
+
+| Метод | Описание |
+|---|---|
+| `counteragents(department_id, type, limit, offset)` | Список контрагентов |
+| `incoming_invoice_create(payload)` | Создать приходную накладную |
+| `incoming_invoice_export(department_id, date_from, date_to, ...)` | Экспорт приходных накладных |
+| `incoming_invoice_export_by_number(payload)` | Приходная накладная по номеру |
+| `incoming_invoice_pay(payload)` | Провести оплату приходной накладной |
+| `incoming_invoice_set_payment_date(payload)` | Установить дату оплаты |
+| `incoming_invoice_update(payload)` | Обновить приходную накладную |
+| `incoming_service_create(payload)` | Создать акт входящих услуг |
+| `incoming_service_edit(payload)` | Изменить акт входящих услуг |
+| `incoming_service_export(payload)` | Экспорт актов входящих услуг |
+| `incoming_service_get(payload)` | Получить акт входящих услуг |
+| `internal_transfer_create(payload)` | Создать внутреннее перемещение |
+| `internal_transfer_edit(payload)` | Изменить внутреннее перемещение |
+| `internal_transfer_export(payload)` | Экспорт внутренних перемещений |
+| `internal_transfer_get_by_id(payload)` | Перемещение по ID |
+| `internal_transfer_export_by_number(payload)` | Перемещение по номеру |
+| `outgoing_invoice_create(payload)` | Создать расходную накладную |
+| `outgoing_invoice_export(payload)` | Экспорт расходных накладных |
+| `outgoing_invoice_export_by_number(payload)` | Расходная накладная по номеру |
+| `outgoing_invoice_cost_prices(payload)` | Себестоимость по расходной накладной |
+| `outgoing_invoice_pay(payload)` | Провести оплату расходной накладной |
+| `outgoing_invoice_set_payment_date(payload)` | Установить дату оплаты |
+| `outgoing_invoice_update(payload)` | Обновить расходную накладную |
+| `outgoing_service_create(payload)` | Создать акт исходящих услуг |
+| `outgoing_service_edit(payload)` | Изменить акт исходящих услуг |
+| `outgoing_service_export(payload)` | Экспорт актов исходящих услуг |
+| `outgoing_service_get(payload)` | Получить акт исходящих услуг |
+| `production_doc_create(payload)` | Создать акт приготовления |
+| `production_doc_edit(payload)` | Изменить акт приготовления |
+| `production_doc_export(payload)` | Экспорт актов приготовления |
+| `production_doc_get(payload)` | Получить акт приготовления |
+| `sales_doc_create(payload)` | Создать акт реализации |
+| `sales_doc_edit(payload)` | Изменить акт реализации |
+| `sales_doc_export(payload)` | Экспорт актов реализации |
+| `sales_doc_get(payload)` | Получить акт реализации |
+| `writeoff_create(payload)` | Создать акт списания |
+| `writeoff_edit(payload)` | Изменить акт списания |
+| `writeoff_export(payload)` | Экспорт актов списания |
+| `writeoff_get_by_id(payload)` | Акт списания по ID |
+| `writeoff_export_by_number(payload)` | Акт списания по номеру |
+
+#### Закупки
+
+| Метод | Описание |
+|---|---|
+| `order_create(store_id, workflow_id, due_date, ...)` | Создать заказ на закупку |
+| `order_get(order_id)` | Заказ на закупку по ID |
+| `orders_list(payload)` | Список заказов на закупку |
+| `order_add_products(payload)` | Добавить продукты в заказ |
+| `order_select_supplier(payload)` | Выбрать поставщика для заказа |
+| `order_task_status(task_id)` | Статус асинхронной задачи заказа |
+| `order_select_units(payload)` | Выбрать единицы измерения для заказа |
+| `workflow_activate(workflow_id)` | Активировать рабочий процесс |
+| `workflow_deactivate(workflow_id)` | Деактивировать рабочий процесс |
+| `workflow_get(workflow_id)` | Рабочий процесс по ID |
+| `workflows_list(payload)` | Список рабочих процессов |
 
 ## Разработка
 
