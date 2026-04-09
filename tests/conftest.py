@@ -43,3 +43,21 @@ def transport(mocked_responses):
         status=200,
     )
     return Transport(key="api-login-key")
+
+
+WEB_BASE = "https://public-api.iikoweb.ru"
+FAKE_WEB_TOKEN = {"token": "eyJtest.token.abc", "expires_in": 9999999999}
+
+
+@pytest.fixture
+def web(mocked_responses):
+    """IikoWeb instance with mocked auth."""
+    from Pyiiko import IikoWeb
+
+    mocked_responses.add(
+        responses_lib.POST,
+        f"{WEB_BASE}/auth",
+        json=FAKE_WEB_TOKEN,
+        status=200,
+    )
+    return IikoWeb(api_key="test-api-key")
