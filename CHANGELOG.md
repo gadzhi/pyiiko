@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-06
+
+### Added
+- `IikoWeb` — new client for the iiko Public Web API (`https://public-api.iikoweb.ru`).
+  Supports JWT Bearer auth, entities (stores, products, users, payment types),
+  document processing (41 methods: incoming/outgoing invoices, internal transfers,
+  write-offs, production and sales acts), nomenclature barcodes, and purchasing
+  workflows (11 methods).
+- `_NomenclatureMixin` — 15 new `IikoServer` methods for the v2 nomenclature API
+  (`/api/v2/entities/products/...`): list, save, update, delete, restore for
+  product elements, groups, and user-defined categories.
+- 94 new tests (75 for `IikoWeb`, 19 for nomenclature v2); total test count: 158.
+
+### Changed
+- `pyproject.toml`: license field updated to PEP 639 SPDX string (`"Apache-2.0"`).
+
+### Removed
+- Legacy `test/` folder (old integration tests that required a live server).
+- `.github/` and `.idea/` directories untracked and added to `.gitignore`.
+- `setup.py` removed (fully replaced by `pyproject.toml` since 0.3.0).
+
 ## [0.3.0] - 2026-04-08
 
 ### Breaking changes
@@ -58,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial public release.
 
-[Unreleased]: https://github.com/gadzhi/pyiiko/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/gadzhi/pyiiko/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/gadzhi/pyiiko/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/gadzhi/pyiiko/compare/v0.2.15...v0.3.0
 [0.2.15]: https://github.com/gadzhi/pyiiko/releases/tag/v0.2.15
