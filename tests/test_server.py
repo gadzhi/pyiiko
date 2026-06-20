@@ -925,3 +925,96 @@ def test_nomenclature_category_restore(server):
     )
     result = server.nomenclature_category_restore(["cat-uuid"])
     assert result["result"] == "SUCCESS"
+
+
+# ---------------------------------------------------------------------------
+# Entities v2 — reference data (справочники)
+# ---------------------------------------------------------------------------
+
+_ENT_BASE = f"{SERVER_BASE}/api/v2/entities"
+
+
+@responses.activate
+def test_entities_list_returns_data(server):
+    payload = [{"id": "uuid-1", "rootType": "DiscountType", "deleted": False, "code": None, "name": "Скидка 20%"}]
+    responses.add(responses.GET, f"{_ENT_BASE}/list", json=payload, status=200)
+    result = server.entities_list(["DiscountType"])
+    assert result[0]["rootType"] == "DiscountType"
+    assert result[0]["id"] == "uuid-1"
+
+
+@responses.activate
+def test_entities_list_multiple_root_types(server):
+    responses.add(responses.GET, f"{_ENT_BASE}/list", json=[], status=200)
+    server.entities_list(["DiscountType", "PaymentType"])
+    url = responses.calls[0].request.url
+    assert "rootType=DiscountType" in url
+    assert "rootType=PaymentType" in url
+
+
+@responses.activate
+def test_entities_list_include_deleted_false(server):
+    responses.add(responses.GET, f"{_ENT_BASE}/list", json=[], status=200)
+    server.entities_list(["TaxCategory"], include_deleted=False)
+    assert "includeDeleted=false" in responses.calls[0].request.url
+
+
+@responses.activate
+def test_entities_list_include_deleted_default_true(server):
+    responses.add(responses.GET, f"{_ENT_BASE}/list", json=[], status=200)
+    server.entities_list(["Account"])
+    assert "includeDeleted=true" in responses.calls[0].request.url
+
+
+@responses.activate
+def test_entities_list_revision_from_param(server):
+    responses.add(responses.GET, f"{_ENT_BASE}/list", json=[], status=200)
+    server.entities_list(["Account"], revision_from=42)
+    assert "revisionFrom=42" in responses.calls[0].request.url
+
+
+@responses.activate
+def test_entities_list_passes_auth_key(server):
+    from tests.conftest import FAKE_TOKEN
+    responses.add(responses.GET, f"{_ENT_BASE}/list", json=[], status=200)
+    server.entities_list(["OrderType"])
+    assert f"key={FAKE_TOKEN}" in responses.calls[0].request.url
+
+
+@responses.activate
+def test_entities_ids_returns_list(server):
+    uuids = ["15fb045f-db6a-269d-6473-023f3c936fcf", "6aacad98-dc14-2a85-10fc-0b0261eb8849"]
+    responses.add(responses.GET, f"{_ENT_BASE}/Account/ids", json=uuids, status=200)
+    result = server.entities_ids("Account")
+    assert result == uuids
+
+
+@responses.activate
+def test_entities_ids_entity_type_in_path(server):
+    responses.add(responses.GET, f"{_ENT_BASE}/PaymentType/ids", json=[], status=200)
+    server.entities_ids("PaymentType")
+    assert "/api/v2/entities/PaymentType/ids" in responses.calls[0].request.url
+
+
+@responses.activate
+def test_entities_ids_include_deleted_and_revision(server):
+    responses.add(responses.GET, f"{_ENT_BASE}/Account/ids", json=[], status=200)
+    server.entities_ids("Account", include_deleted=False, revision_from=10)
+    url = responses.calls[0].request.url
+    assert "includeDeleted=false" in url
+    assert "revisionFrom=10" in url
+
+
+@responses.activate
+def test_entities_ids_default_include_deleted_true(server):
+    responses.add(responses.GET, f"{_ENT_BASE}/Account/ids", json=[], status=200)
+    server.entities_ids("Account")
+    assert "includeDeleted=true" in responses.calls[0].request.url
+
+
+@responses.activate
+def test_entities_ids_passes_auth_key(server):
+    from tests.conftest import FAKE_TOKEN
+    responses.add(responses.GET, f"{_ENT_BASE}/Account/ids", json=[], status=200)
+    server.entities_ids("Account")
+    assert f"key={FAKE_TOKEN}" in responses.calls[0].request.url
