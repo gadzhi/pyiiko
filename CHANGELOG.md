@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-21
+
+### Added
+- `_EntitiesMixin` — 2 new `IikoServer` methods for the v2 reference-data API:
+  - `entities_list(root_types, ...)` — `GET /api/v2/entities/list`: retrieves
+    common reference records for one or more entity types (DiscountType,
+    PaymentType, TaxCategory, LocalTax, OrderType, ProductSize, Account, etc.);
+    supports multiple `rootType` params, `includeDeleted`, and `revisionFrom`.
+  - `entities_ids(entity_type, ...)` — `GET /api/v2/entities/{entityType}/ids`:
+    returns the list of UUID identifiers for any entity type; supports
+    `includeDeleted` and `revisionFrom`.
+- 11 new tests for the entities v2 API.
+
 ## [0.4.0] - 2026-05-06
 
 ### Added
@@ -79,7 +92,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial public release.
 
-[Unreleased]: https://github.com/gadzhi/pyiiko/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/gadzhi/pyiiko/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/gadzhi/pyiiko/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/gadzhi/pyiiko/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/gadzhi/pyiiko/compare/v0.2.15...v0.3.0
 [0.2.15]: https://github.com/gadzhi/pyiiko/releases/tag/v0.2.15
