@@ -78,5 +78,6 @@ jobs:
           python -m pip --python "$wheel_env" install dist/*.whl
           cd "$RUNNER_TEMP"
           "$wheel_env/bin/python" -c 'from importlib.resources import files; assert files("Pyiiko").joinpath("py.typed").is_file()'
-          site_packages=$("$wheel_env/bin/python" -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
-          python -m pip_audit --strict --path "$site_packages"
+          requirements="$RUNNER_TEMP/pyiiko-runtime.txt"
+          python -m pip --python "$wheel_env" freeze --exclude Pyiiko > "$requirements"
+          python -m pip_audit --strict --no-deps --disable-pip -r "$requirements"
