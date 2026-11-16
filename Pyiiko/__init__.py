@@ -4,7 +4,7 @@ from .iiko_web import IikoWeb
 from .server import IikoServer
 from .transport import Transport
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 __all__ = [
     "IikoServer",
     "Transport",
