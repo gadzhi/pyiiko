@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12', '3.13', '3.14', '3.15']
+        dependencies: [latest]
+        include:
+          - python-version: '3.11'
+            dependencies: minimum
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        if: matrix.dependencies == 'latest'
+        run: python -m pip install -e '.[dev]'
+      - name: Install minimum runtime dependencies
+        if: matrix.dependencies == 'minimum'
+        run: |
+          python - <<'PY'
+          import tomllib
+          from pathlib import Path
+
+          project = tomllib.loads(Path('pyproject.toml').read_text())['project']
+          constraints = [requirement.replace('>=', '==', 1) for requirement in project['dependencies']]
+          Path('minimum-constraints.txt').write_text('\n'.join(constraints) + '\n')
+          PY
+          python -m pip install -c minimum-constraints.txt -e '.[dev]'
+      - name: Lint and type check
+        if: matrix.python-version == '3.13'
+        run: |
+          ruff check Pyiiko tests
+          mypy Pyiiko
+      - name: Test
+        run: python -m pytest --cov=Pyiiko
+
+  distributions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - run: python -m pip install build twine pip-audit '.[dev]'
+      - name: Build and check metadata
+        run: |
+          python -m build
+          python -m twine check dist/*
+      - name: Run tests from the source distribution
+        run: |
+          mkdir "$RUNNER_TEMP/pyiiko-source"
+          tar -xzf dist/*.tar.gz --strip-components=1 -C "$RUNNER_TEMP/pyiiko-source"
+          cd "$RUNNER_TEMP/pyiiko-source"
+          python -m pytest
+      - name: Install and audit the wheel
+        run: |
+          wheel_env="$RUNNER_TEMP/pyiiko-wheel"
+          python -m venv --without-pip "$wheel_env"
+          python -m pip --python "$wheel_env" install dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$wheel_env/bin/python" -c 'from importlib.resources import files; assert files("Pyiiko").joinpath("py.typed").is_file()'
+          site_packages=$("$wheel_env/bin/python" -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
+          python -m pip_audit --strict --path "$site_packages"

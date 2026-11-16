@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Require Python 3.11+ and update the minimum HTTP and XML dependency versions.
+- Retry read operations on transient HTTP or connection errors. Send write requests,
+  token requests, and logout requests once. Reject HTTP redirects.
+- Default scheme-less iiko Server addresses to HTTPS. Use an explicit HTTP URL for legacy servers.
+
+### Added
+
+- Support iiko Cloud v2 authentication with `Transport(key=..., app_id=..., client_secret=...)`.
+- Restore GitHub Actions for tests, dependency audits, and distribution checks.
+
+### Fixed
+
+- Omit credentials from Pyiiko log messages and HTTP exception tracebacks.
+- Release client-owned iiko Server tokens when leaving a context manager.
+- Send the documented Cloud requests for organizations, terminal groups, and deliveries by date.
+- Parse XML server version responses without resolving entities and send the XML events media type.
+- Include the complete test suite in source distributions.
+
 ## [0.5.0] - 2026-06-21
 
 ### Added
@@ -48,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   silently returning `None`. Update any code that checks `if result is None`.
 - `Transport.by_delivery_date` parameter renamed from `order_id` to
   `delivery_date_from` to match its actual meaning.
+- `IikoServer.olap2()` returns decoded JSON. Remove `.json()` from existing calls.
 - `FrontWebAPI` module removed.
 - `IikoBiz` module removed.
 - `Card5` module removed.
