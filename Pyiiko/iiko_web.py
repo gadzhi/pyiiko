@@ -78,6 +78,7 @@ class IikoWeb(_DocsMixin, BaseIikoClient):
         """Return the list of all stores."""
         return self._post(
             "entities/store/list",
+            retry=True,
             headers=self._auth(),
             json={},
         )
@@ -89,6 +90,7 @@ class IikoWeb(_DocsMixin, BaseIikoClient):
         """
         return self._post(
             "entities/store/get",
+            retry=True,
             headers=self._auth(),
             json={"id": store_id},
         )
@@ -112,6 +114,7 @@ class IikoWeb(_DocsMixin, BaseIikoClient):
         }
         return self._post(
             "entities/products/list",
+            retry=True,
             headers=self._auth(),
             json=body,
         )
@@ -135,6 +138,7 @@ class IikoWeb(_DocsMixin, BaseIikoClient):
         }
         return self._post(
             "entities/product-category/list",
+            retry=True,
             headers=self._auth(),
             json=body,
         )
@@ -158,6 +162,7 @@ class IikoWeb(_DocsMixin, BaseIikoClient):
         }
         return self._post(
             "entities/product-size/list",
+            retry=True,
             headers=self._auth(),
             json=body,
         )
@@ -181,6 +186,7 @@ class IikoWeb(_DocsMixin, BaseIikoClient):
         }
         return self._post(
             "entities/user/list",
+            retry=True,
             headers=self._auth(),
             json=body,
         )
@@ -204,6 +210,7 @@ class IikoWeb(_DocsMixin, BaseIikoClient):
         }
         return self._post(
             "entities/payment-type/list",
+            retry=True,
             headers=self._auth(),
             json=body,
         )
@@ -227,6 +234,7 @@ class IikoWeb(_DocsMixin, BaseIikoClient):
         }
         return self._post(
             "entities/cash-flow-category/list",
+            retry=True,
             headers=self._auth(),
             json=body,
         )
@@ -284,6 +292,7 @@ class IikoWeb(_DocsMixin, BaseIikoClient):
         """
         return self._post(
             "purchasing/orders/get",
+            retry=True,
             headers=self._auth(),
             json={"id": order_id},
         )
@@ -295,6 +304,7 @@ class IikoWeb(_DocsMixin, BaseIikoClient):
         """
         return self._post(
             "purchasing/orders/list",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -328,6 +338,7 @@ class IikoWeb(_DocsMixin, BaseIikoClient):
         """
         return self._post(
             "purchasing/orders/task-status",
+            retry=True,
             headers=self._auth(),
             json={"taskId": task_id},
         )
@@ -376,6 +387,7 @@ class IikoWeb(_DocsMixin, BaseIikoClient):
         """
         return self._post(
             "purchasing/workflows/get",
+            retry=True,
             headers=self._auth(),
             json={"id": workflow_id},
         )
@@ -387,6 +399,7 @@ class IikoWeb(_DocsMixin, BaseIikoClient):
         """
         return self._post(
             "purchasing/workflows/list",
+            retry=True,
             headers=self._auth(),
             json=payload or {},
         )

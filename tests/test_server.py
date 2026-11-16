@@ -1,6 +1,11 @@
 """Unit tests for IikoServer."""
+import logging
+import traceback
+from unittest.mock import patch
+
 import pytest
 import responses
+from requests.exceptions import ReadTimeout
 
 from Pyiiko import IikoAPIError, IikoAuthError, IikoServer
 from tests.conftest import FAKE_TOKEN, SERVER_BASE, SERVER_URL
@@ -26,10 +31,13 @@ def test_get_token_raises_on_empty_body():
 
 @responses.activate
 def test_get_token_raises_api_error_on_http_error():
+    password = "test-password-secret"
     responses.add(responses.GET, f"{SERVER_BASE}/api/auth", status=401)
     with pytest.raises(IikoAPIError) as exc_info:
-        IikoServer(ip=SERVER_URL, login="user", password="bad")
+        IikoServer(ip=SERVER_URL, login="user", password=password)
     assert exc_info.value.status_code == 401
+    assert exc_info.value.__cause__ is None
+    assert password not in "".join(traceback.format_exception(exc_info.value))
 
 
 @responses.activate
@@ -41,16 +49,21 @@ def test_pre_provided_token_skips_auth(mocked_responses):
 
 
 @responses.activate
-def test_quit_token(server):
-    responses.add(responses.GET, f"{SERVER_BASE}/api/logout", status=200)
-    server.quit_token()  # should not raise
+def test_quit_token(server, caplog):
+    route = responses.get(f"{SERVER_BASE}/api/logout", status=200)
+    with caplog.at_level(logging.INFO):
+        server.quit_token()
+    server.quit_token()
+    assert route.call_count == 1
+    assert "iiko Server token released" in caplog.text
+    assert FAKE_TOKEN not in caplog.text
 
 
 # ---------------------------------------------------------------------------
 # Server info
 # ---------------------------------------------------------------------------
 
-_SERVER_INFO_XML = b"<r><version>7.8.9</version></r>"
+_SERVER_INFO_XML = b'<?xml version="1.0" encoding="UTF-8"?><r><version>7.8.9</version></r>'
 
 
 @responses.activate
@@ -74,6 +87,7 @@ def test_server_info(server):
     )
     info = server.server_info()
     assert info["version"] == "7.8.9"
+    assert server.version() == "7.8.9"
 
 
 # ---------------------------------------------------------------------------
@@ -205,8 +219,9 @@ def test_invoice_number_in_current_year_param(server):
 
 
 @responses.activate
-def test_api_error_on_500(server):
-    responses.add(
+def test_api_error_on_500(server, monkeypatch):
+    monkeypatch.setattr("Pyiiko._base.sleep", lambda delay: None)
+    route = responses.add(
         responses.GET,
         f"{SERVER_BASE}/api/corporation/departments",
         status=500,
@@ -214,6 +229,41 @@ def test_api_error_on_500(server):
     with pytest.raises(IikoAPIError) as exc_info:
         server.departments()
     assert exc_info.value.status_code == 500
+    assert route.call_count == 4
+
+
+@responses.activate
+def test_retry_read_after_503(server):
+    url = f"{SERVER_BASE}/api/corporation/departments"
+    first = responses.get(url, status=503)
+    second = responses.get(url, body=b"<departments/>")
+    assert server.departments() == b"<departments/>"
+    assert first.call_count == second.call_count == 1
+
+
+@responses.activate
+def test_auth_does_not_retry_a_read_timeout():
+    password = "test-password-secret"
+    route = responses.get(f"{SERVER_BASE}/api/auth", body=ReadTimeout(password))
+    with pytest.raises(ReadTimeout) as exc_info:
+        IikoServer(ip=SERVER_URL, login="user", password=password)
+    assert route.call_count == 1
+    assert exc_info.value.__context__ is None
+    assert password not in "".join(traceback.format_exception(exc_info.value))
+
+
+@pytest.mark.parametrize("headers", [{}, {"Location": f"{SERVER_BASE}/elsewhere"}])
+@responses.activate
+def test_auth_rejects_redirects(headers):
+    route = responses.get(
+        f"{SERVER_BASE}/api/auth",
+        status=307,
+        headers=headers,
+    )
+    with pytest.raises(IikoAPIError) as exc_info:
+        IikoServer(ip=SERVER_URL, login="user", password="test-password-secret")
+    assert exc_info.value.status_code == 307
+    assert route.call_count == len(responses.calls) == 1
 
 
 @responses.activate
@@ -236,8 +286,49 @@ def test_api_error_on_403(server):
 @responses.activate
 def test_context_manager():
     responses.add(responses.GET, f"{SERVER_BASE}/api/auth", body=FAKE_TOKEN, status=200)
-    with IikoServer(ip=SERVER_URL, login="user", password="pass") as server:
+    logout = responses.get(f"{SERVER_BASE}/api/logout", status=200)
+    client = IikoServer(ip=SERVER_URL, login="user", password="pass")
+    with patch.object(client._session, "close", wraps=client._session.close) as close:
+        with client as server:
+            assert server.token() == FAKE_TOKEN
+    assert logout.call_count == 1
+    close.assert_called_once()
+
+
+@responses.activate
+def test_context_manager_leaves_supplied_token_active():
+    with IikoServer(ip=SERVER_URL, token=FAKE_TOKEN) as server:
         assert server.token() == FAKE_TOKEN
+    assert not responses.calls
+
+
+@responses.activate
+def test_context_manager_preserves_block_error_on_logout_failure(server):
+    logout = responses.get(f"{SERVER_BASE}/api/logout", status=503)
+    with patch.object(server._session, "close", wraps=server._session.close) as close:
+        with pytest.raises(ValueError, match="block error"), server:
+            raise ValueError("block error")
+        close.assert_called_once()
+    assert logout.call_count == 1
+
+
+@responses.activate
+def test_context_manager_reports_logout_failure_on_success(server):
+    logout = responses.get(f"{SERVER_BASE}/api/logout", status=503)
+    with pytest.raises(IikoAPIError) as exc_info, server:
+        pass
+    assert exc_info.value.status_code == 503
+    assert logout.call_count == 1
+
+
+@pytest.mark.parametrize("address", ["resto", "https://resto/resto/"])
+@responses.activate
+def test_hostname_defaults_to_https(address):
+    endpoint = "https://resto/resto/api/corporation/departments"
+    route = responses.get(endpoint, body=b"<departments/>")
+    client = IikoServer(ip=address, token=FAKE_TOKEN)
+    assert client.departments() == b"<departments/>"
+    assert route.call_count == 1
 
 
 # ---------------------------------------------------------------------------
@@ -347,6 +438,7 @@ def test_events_filter(server):
     result = server.events_filter(xml_body)
     assert result == b"<result/>"
     assert responses.calls[0].request.body == xml_body
+    assert responses.calls[0].request.headers["Content-Type"] == "application/xml"
 
 
 @responses.activate
@@ -936,7 +1028,10 @@ _ENT_BASE = f"{SERVER_BASE}/api/v2/entities"
 
 @responses.activate
 def test_entities_list_returns_data(server):
-    payload = [{"id": "uuid-1", "rootType": "DiscountType", "deleted": False, "code": None, "name": "Скидка 20%"}]
+    payload = [
+        {"id": "uuid-1", "rootType": "DiscountType", "deleted": False, "code": None,
+         "name": "Скидка 20%"},
+    ]
     responses.add(responses.GET, f"{_ENT_BASE}/list", json=payload, status=200)
     result = server.entities_list(["DiscountType"])
     assert result[0]["rootType"] == "DiscountType"

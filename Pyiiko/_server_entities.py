@@ -19,7 +19,7 @@ class _EntitiesMixin:
     """
 
     if TYPE_CHECKING:
-        def _get(self, path: str, **kwargs: Any) -> requests.Response: ...
+        def _get(self, path: str, *, retry: bool = True, **kwargs: Any) -> requests.Response: ...
 
     def _key(self, **extra: Any) -> dict[str, Any]:  # satisfied by IikoServer
         raise NotImplementedError

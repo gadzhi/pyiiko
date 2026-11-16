@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 import logging
-from io import StringIO
+from types import TracebackType
 from typing import Any
+from urllib.parse import urlsplit
 
 from lxml import etree
 
@@ -24,8 +25,9 @@ class IikoServer(_EntitiesMixin, _NomenclatureMixin, BaseIikoClient):
         server = IikoServer(ip="https://host:443", login="user", password="sha1hash")
         print(server.version())
 
-    One token occupies one license slot.  Call :meth:`quit_token` when done to
-    free the slot, or use the client as a context manager::
+    One token occupies one license slot. Use a context manager to release a
+    token obtained by this client. A caller-supplied token can be released
+    explicitly with :meth:`quit_token`::
 
         with IikoServer(...) as server:
             data = server.departments()
@@ -39,11 +41,25 @@ class IikoServer(_EntitiesMixin, _NomenclatureMixin, BaseIikoClient):
         token: str | None = None,
         timeout: int = DEFAULT_TIMEOUT,
     ) -> None:
-        base_url = (ip or "").rstrip("/") + "/resto/"
+        address = (ip or "").strip().rstrip("/")
+        if "://" not in address:
+            address = f"https://{address}"
+        url = urlsplit(address)
+        if url.scheme not in {"http", "https"} or not url.hostname:
+            raise ValueError("ip must be an iiko Server hostname or HTTP(S) URL")
+        if url.username is not None or url.query or url.fragment:
+            raise ValueError("ip must not contain credentials, a query, or a fragment")
+        base_url = address if url.path.endswith("/resto") else f"{address}/resto"
         super().__init__(base_url, timeout)
         self.login = login
         self.password = password
-        self._token: str = token or self.get_token()
+        self._owns_token = not token
+        self._token_released = False
+        try:
+            self._token = token or self.get_token()
+        except BaseException:
+            self.close()
+            raise
 
     # ------------------------------------------------------------------
     # Auth
@@ -70,6 +86,7 @@ class IikoServer(_EntitiesMixin, _NomenclatureMixin, BaseIikoClient):
         """
         response = self._get(
             "api/auth",
+            retry=False,
             params={"login": self.login, "pass": self.password},
         )
         token = response.text.strip()
@@ -78,9 +95,28 @@ class IikoServer(_EntitiesMixin, _NomenclatureMixin, BaseIikoClient):
         return token
 
     def quit_token(self) -> None:
-        """Destroy the current token and release the license slot."""
-        self._get("api/logout", params={"key": self._token})
-        logger.info("Token destroyed: %s", self._token)
+        """Destroy the current token and release the license slot once."""
+        if self._token_released:
+            return
+        self._get("api/logout", retry=False, params={"key": self._token})
+        self._token_released = True
+        logger.info("iiko Server token released")
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        try:
+            if self._owns_token:
+                self.quit_token()
+        except Exception:
+            if exc is None:
+                raise
+            logger.warning("Could not release the iiko Server token")
+        finally:
+            super().__exit__(exc_type, exc, tb)
 
     # ------------------------------------------------------------------
     # Server info
@@ -88,15 +124,17 @@ class IikoServer(_EntitiesMixin, _NomenclatureMixin, BaseIikoClient):
 
     def version(self) -> str:
         """Return the iiko server version string."""
-        text = self._get(
+        response = self._get(
             "get_server_info.jsp", params={"encoding": "UTF-8"}
-        ).text
-        tree = etree.parse(StringIO(text))
-        nodes: list[Any] = tree.xpath(r"//version/text()")  # type: ignore[assignment]
-        return "".join(str(x) for x in nodes)
+        )
+        if response.content.lstrip().startswith(b"{"):
+            return str(response.json().get("version", ""))
+        parser = etree.XMLParser(resolve_entities=False, load_dtd=False, no_network=True)
+        root = etree.fromstring(response.content, parser=parser)
+        return str(root.xpath("string((//version)[1])"))
 
     def server_info(self) -> Any:
-        """Return server info and license status as a parsed JSON dict."""
+        """Return server info and license status from a JSON response."""
         return self._get(
             "get_server_info.jsp", params={"encoding": "UTF-8"}
         ).json()
@@ -225,8 +263,10 @@ class IikoServer(_EntitiesMixin, _NomenclatureMixin, BaseIikoClient):
         """
         return self._post(
             "api/events",
+            retry=True,
             data=body,
             params={"key": self._token},
+            headers={"Content-Type": "application/xml"},
         ).content
 
     def events_meta(self) -> bytes:
@@ -468,6 +508,7 @@ class IikoServer(_EntitiesMixin, _NomenclatureMixin, BaseIikoClient):
         """
         return self._post(
             "api/v2/reports/olap",
+            retry=True,
             params={"key": self._token},
             json=body,
         ).json()

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77.0.3", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,23 +9,24 @@ description = "Python library for iiko ERP API"
 readme = "README.md"
 license = "Apache-2.0"
 authors = [{ name = "Gadzhibala Pirmagomedov", email = "gadzhibala@protonmail.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 keywords = ["iiko", "restaurant", "erp", "api", "horeca"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
 dependencies = [
-    "requests>=2.28.0",
-    "lxml>=4.9.0",
-    "urllib3>=1.26.0",
+    "requests>=2.34.2",
+    "lxml>=6.1.3",
+    "urllib3>=2.8.0",
 ]
 
 [project.optional-dependencies]
@@ -35,7 +36,6 @@ dev = [
     "responses>=0.23.0",
     "ruff>=0.4.0",
     "mypy>=1.9",
-    "types-requests>=2.31",
     "lxml-stubs>=0.5",
 ]
 
@@ -69,7 +69,7 @@ show_missing = true
 
 [tool.ruff]
 line-length = 99
-target-version = "py39"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]
@@ -78,7 +78,7 @@ ignore = [
 ]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_ignores = true
 disallow_untyped_defs = true

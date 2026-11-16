@@ -11,7 +11,7 @@ class _DocsMixin:
     """Mixin providing all document-processing endpoints for IikoWeb."""
 
     if TYPE_CHECKING:
-        def _post(self, path: str, **kwargs: Any) -> requests.Response: ...
+        def _post(self, path: str, *, retry: bool = False, **kwargs: Any) -> requests.Response: ...
 
     def _auth(self) -> dict[str, str]:  # satisfied by IikoWeb
         raise NotImplementedError
@@ -46,6 +46,7 @@ class _DocsMixin:
         }
         return self._post(
             "document-processing/counteragents",
+            retry=True,
             headers=self._auth(),
             json=body,
         )
@@ -94,6 +95,7 @@ class _DocsMixin:
         }
         return self._post(
             "document-processing/incoming-invoice/export",
+            retry=True,
             headers=self._auth(),
             json=body,
         )
@@ -105,6 +107,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/incoming-invoice/export/by-number",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -175,6 +178,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/incoming-service/export",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -186,6 +190,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/incoming-service/get-document",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -223,6 +228,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/internal-transfer/export",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -234,6 +240,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/internal-transfer/export/by-id",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -245,6 +252,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/internal-transfer/export/by-number",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -271,6 +279,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/outgoing-invoice/export",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -282,6 +291,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/outgoing-invoice/export/by-number",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -293,6 +303,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/outgoing-invoice/get-cost-prices",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -363,6 +374,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/outgoing-service/export",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -374,6 +386,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/outgoing-service/get-document",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -411,6 +424,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/production-document/export",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -422,6 +436,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/production-document/get-document",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -459,6 +474,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/sales-document/export",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -470,6 +486,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/sales-document/get-document",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -507,6 +524,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/writeoff-document/export",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -518,6 +536,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/writeoff-document/export/by-id",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )
@@ -529,6 +548,7 @@ class _DocsMixin:
         """
         return self._post(
             "document-processing/writeoff-document/export/by-number",
+            retry=True,
             headers=self._auth(),
             json=payload,
         )

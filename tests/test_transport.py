@@ -30,6 +30,26 @@ def test_get_token_returns_dict():
 
 
 @responses.activate
+def test_v2_auth_sends_application_credentials():
+    route = responses.post(f"{TRANSPORT_BASE}/api/v2/access_token", json=FAKE_TRANSPORT_TOKEN)
+    client = Transport("api-key", app_id="app-id", client_secret="app-secret")
+    assert client.token() == FAKE_TRANSPORT_TOKEN
+    assert route.call_count == 1
+    assert json.loads(route.calls[0].request.body) == {
+        "appId": "app-id",
+        "clientSecret": "app-secret",
+        "apiKey": "api-key",
+    }
+
+
+@responses.activate
+def test_incomplete_v2_auth_fails_without_sending_request():
+    with pytest.raises(IikoAuthError, match="both app_id and client_secret"):
+        Transport("api-key", app_id="app-id")
+    assert not responses.calls
+
+
+@responses.activate
 def test_get_token_raises_on_empty_token():
     responses.add(
         responses.POST,
@@ -68,19 +88,20 @@ def test_pre_provided_token_skips_auth():
 @responses.activate
 def test_organization(transport):
     responses.add(
-        responses.GET,
+        responses.POST,
         f"{TRANSPORT_BASE}/api/1/organizations",
         json={"organizations": []},
         status=200,
     )
     resp = transport.organization()
     assert resp.status_code == 200
+    assert json.loads(responses.calls[0].request.body) == {}
 
 
 @responses.activate
 def test_organization_sends_bearer(transport):
     responses.add(
-        responses.GET,
+        responses.POST,
         f"{TRANSPORT_BASE}/api/1/organizations",
         json={},
         status=200,
@@ -90,18 +111,19 @@ def test_organization_sends_bearer(transport):
     assert auth_header == f"Bearer {FAKE_TRANSPORT_TOKEN['token']}"
 
 
+@pytest.mark.parametrize(("include", "expected"), [("false", False), ("true", True), (True, True)])
 @responses.activate
-def test_terminal(transport):
+def test_terminal(transport, include, expected):
     responses.add(
         responses.POST,
         f"{TRANSPORT_BASE}/api/1/terminal_groups",
         json={"terminalGroups": []},
         status=200,
     )
-    resp = transport.terminal(org_id=ORG_ID)
+    resp = transport.terminal(ORG_ID, include)
     assert resp.status_code == 200
     body = json.loads(responses.calls[0].request.body)
-    assert body == {"organizationIds": [ORG_ID]}
+    assert body == {"organizationIds": [ORG_ID], "includeDisabled": expected}
 
 
 @responses.activate
@@ -210,9 +232,10 @@ def test_by_revision(transport):
 
 
 @responses.activate
-def test_api_error_on_500(transport):
+def test_api_error_on_500(transport, monkeypatch):
+    monkeypatch.setattr("Pyiiko._base.sleep", lambda delay: None)
     responses.add(
-        responses.GET,
+        responses.POST,
         f"{TRANSPORT_BASE}/api/1/organizations",
         status=500,
     )
@@ -254,9 +277,64 @@ def test_by_delivery_date(transport):
         json={},
         status=200,
     )
-    transport.by_delivery_date(org_id=ORG_ID, delivery_date_from=date_from)
+    transport.by_delivery_date(
+        ORG_ID, date_from, delivery_date_to="2024-01-02T00:00:00.000", statuses=["Closed"]
+    )
     body = json.loads(responses.calls[0].request.body)
-    assert body == {"organizationId": [ORG_ID], "deliveryDateFrom": [date_from]}
+    assert body == {
+        "organizationIds": [ORG_ID],
+        "deliveryDateFrom": "2024-01-01 00:00:00.000",
+        "deliveryDateTo": "2024-01-02 00:00:00.000",
+        "statuses": ["Closed"],
+    }
+
+
+@responses.activate
+def test_by_delivery_date_rejects_missing_arguments(transport):
+    with pytest.raises(ValueError, match="org_id and delivery_date_from"):
+        transport.by_delivery_date(ORG_ID)
+    assert not responses.calls
+
+
+@responses.activate
+def test_read_only_post_retries(transport):
+    url = f"{TRANSPORT_BASE}/api/1/organizations"
+    responses.post(url, status=503)
+    responses.post(url, json={"organizations": []})
+    assert transport.organization().json() == {"organizations": []}
+    assert len(responses.calls) == 2
+
+
+@pytest.mark.parametrize("status", [429, 503])
+@responses.activate
+def test_read_only_post_respects_retry_after(transport, monkeypatch, status):
+    url = f"{TRANSPORT_BASE}/api/1/organizations"
+    responses.post(url, status=status, headers={"Retry-After": "5"})
+    responses.post(url, json={"organizations": []})
+    delays = []
+    monkeypatch.setattr("Pyiiko._base.sleep", delays.append)
+    assert transport.organization().json() == {"organizations": []}
+    assert len(responses.calls) == 2
+    assert delays == [5]
+
+
+@responses.activate
+def test_long_retry_after_is_left_to_caller(transport):
+    url = f"{TRANSPORT_BASE}/api/1/organizations"
+    route = responses.post(url, status=503, headers={"Retry-After": "120"})
+    with pytest.raises(IikoAPIError) as exc_info:
+        transport.organization()
+    assert exc_info.value.status_code == 503
+    assert route.call_count == 1
+
+
+@responses.activate
+def test_delivery_create_does_not_retry(transport):
+    route = responses.post(f"{TRANSPORT_BASE}/api/1/deliveries/create", status=503)
+    with pytest.raises(IikoAPIError) as exc_info:
+        transport.delivery_create({"organizationId": ORG_ID})
+    assert exc_info.value.status_code == 503
+    assert route.call_count == 1
 
 
 # ---------------------------------------------------------------------------

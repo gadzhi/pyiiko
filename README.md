@@ -20,7 +20,7 @@
 - **iiko Server API** — on-premise установки (складской учёт, номенклатура, отчёты OLAP, сотрудники, накладные, EDI)
 - **iiko Transport API** — облачный API (организации, терминалы, доставки, города, улицы)
 - **iiko Public Web API** — облачный API нового поколения (документооборот, номенклатура, закупки)
-- Автоматический retry на 5xx ошибки (3 попытки с backoff)
+- До трёх повторов операций чтения при временных сетевых сбоях и HTTP 500, 502, 503, 504
 - Единая иерархия исключений: `IikoError` → `IikoAuthError` / `IikoAPIError`
 - Context manager для автоматического освобождения ресурсов
 - Type hints, PEP 561 `py.typed`
@@ -31,7 +31,7 @@
 pip install Pyiiko
 ```
 
-**Требования:** Python 3.9+
+**Требования:** Python 3.11+
 
 ## Быстрый старт
 
@@ -52,7 +52,7 @@ print(server.departments())      # XML с иерархией подраздел�
 print(server.products())         # XML с номенклатурой
 ```
 
-Использование как context manager освобождает токен (лицензионный слот) автоматически:
+При выходе из контекста клиент освобождает лицензионный слот, если сам получил токен:
 
 ```python
 with IikoServer(ip="...", login="...", password="...") as server:
@@ -66,6 +66,12 @@ with IikoServer(ip="...", login="...", password="...") as server:
 ```python
 server = IikoServer(ip="https://...", token="your-existing-token")
 ```
+
+Переданный токен остаётся под управлением вызывающего кода. Для его отзыва можно явно вызвать
+`quit_token()`. Указание имени хоста без схемы выбирает HTTPS. Для старых установок можно явно
+указать `http://`, при этом учётные данные передаются без шифрования. Для iikoServer используйте
+конечный адрес без перенаправлений. Протокол iikoServer передаёт `pass` и `key` в URL. Исключите
+query-параметры из журналов прокси и оставьте DEBUG-логгер `urllib3.connectionpool` выключенным.
 
 ### iiko Public Web API
 
@@ -102,12 +108,16 @@ client = IikoWeb(token={"token": "eyJ...", "expires_in": 9999999999})
 ```python
 from Pyiiko import Transport
 
-client = Transport(key="your-api-login-key")
+client = Transport(key="your-api-key", app_id="your-app-id", client_secret="your-secret")
 
 orgs = client.organization()
 terminals = client.terminal(org_id="org-guid-...")
 cities = client.cities(org_id="org-guid-...")
 ```
+
+Для iiko Cloud используйте авторизацию v2 с `key`, `app_id` и `client_secret` или передайте
+готовый `token`. Вызов `Transport(key=...)` сохранён для интеграций с авторизацией v1.
+[Инструкция по авторизации iiko](https://api.iiko.help/docs/concepts/authorization/)
 
 Создание доставки:
 
@@ -129,12 +139,10 @@ response = client.delivery_create(order_info=order)
 from Pyiiko import IikoServer, IikoAuthError, IikoAPIError
 
 try:
-    server = IikoServer(ip="...", login="user", password="wrong")
-except IikoAuthError:
-    print("Неверные учётные данные")
-
-try:
-    data = server.departments()
+    with IikoServer(ip="iiko.example.com", login="user", password="password-sha1") as server:
+        data = server.departments()
+except IikoAuthError as e:
+    print(f"Ошибка получения токена: {e}")
 except IikoAPIError as e:
     print(f"Ошибка API: HTTP {e.status_code}")
 ```
@@ -142,8 +150,12 @@ except IikoAPIError as e:
 | Исключение | Когда возникает |
 |---|---|
 | `IikoError` | Базовый класс всех ошибок pyiiko |
-| `IikoAuthError` | Неверный логин/пароль, пустой токен |
-| `IikoAPIError` | Сервер вернул HTTP 4xx/5xx |
+| `IikoAuthError` | Пустой токен или неполные параметры авторизации Transport |
+| `IikoAPIError` | Перенаправление или HTTP 4xx/5xx, включая 401 при авторизации |
+
+После 5xx или таймаута операции записи проверьте её результат в iiko перед ручным повтором.
+Для операций чтения клиент учитывает `Retry-After` до 60 секунд. При большей задержке
+он возвращает HTTP-ошибку сразу, чтобы вызывающий код мог запланировать повтор.
 
 ## Справочник методов
 
@@ -186,7 +198,7 @@ except IikoAPIError as e:
 | Метод | Описание |
 |---|---|
 | `organization()` | Список организаций |
-| `terminal(org_id)` | Терминальные группы |
+| `terminal(org_id, include=False)` | Терминальные группы с опцией включения отключённых групп |
 | `regions(org_id)` | Регионы доставки |
 | `cities(org_id)` | Города |
 | `streets_by_city(org_id, city)` | Улицы города |
